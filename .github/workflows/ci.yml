@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.md'
+      - 'TEMPLATE_FRAMEWORK/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.md'
+      - 'TEMPLATE_FRAMEWORK/**'
+
+jobs:
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint markdown files
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            *.md
+            TEMPLATE_FRAMEWORK/**/*.md
+          config: .github/.markdownlint.jsonc
+        continue-on-error: true
+
+  link-check:
+    name: Link Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check links in markdown files
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'yes'
+          config-file: '.github/.mlc-config.json'
+        continue-on-error: true

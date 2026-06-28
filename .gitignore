@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# TRAE credentials (do NOT commit)
+.trae/models/credentials
+.trae/memory/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Archive - optional, uncomment to ignore
+# ARCHIVE/
+
+# DevLog - optional, uncomment to ignore
+# DEVLOG/
