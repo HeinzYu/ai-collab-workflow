@@ -8,7 +8,7 @@ description: Initialize any project (Apple App / Web / Backend / Game) with a st
 > A structured documentation framework for human + AI collaborative development using TRAE.
 > Supports Apple App, Web, Backend, Game, and any software project type.
 > Designed for both human developers and TRAE Agent.
-> **Version:** 1.7 | **Last Updated:** 2026-06-29
+> **Version:** 1.8 | **Last Updated:** 2026-06-29
 
 ---
 
@@ -376,7 +376,7 @@ After the dialog, TRAE MUST write results into `MODEL_CONFIG.md` under a new sec
 - Model services: always `[自动检测]` (TRAE probes before dialog)
 - Model names (🧠/⚡): always `[用户确认]` (user provides them in the dialog)
 
-#### Step 4: Proceed with Task (继续任务)
+#### Step 4: Proceed with Task (继续任务 + 边界情况降级处理)
 
 After writing MODEL_CONFIG.md §0:
 
@@ -388,6 +388,23 @@ After writing MODEL_CONFIG.md §0:
 - Reasoning model name (🧠), AND
 - Generation model name (⚡), OR
 - Explicitly said "auto-detect for me" / "use cloud"
+
+**Boundary Case Handling (边界情况降级处理):**
+
+| User behavior | TRAE fallback action |
+|---------------|---------------------|
+| **User says "随便" / "你定吧" / "auto"** | TRAE makes a reasonable default: uses the first detected local model for 🧠, and the cloud Agent (current session) for ⚡. Marks both as `[TRAE 自动选择]` in §0 with a note explaining the choice. |
+| **User says "不用本地模型，全部用云端" / "use cloud only"** | Skip all local model routing. Route ALL tasks (both reasoning and generation) through the current cloud Agent. Mark §0 with `local_models: "none (cloud only)"`. |
+| **User provides same model name for 🧠 and ⚡** (e.g., `qwen-2.5-72b` for both) | Accept it — TRAE will use the same model for both roles but still route tasks by intent (analysis vs. code generation). Note in §0: `note: "same model for both roles"`. |
+| **User provides only one model name** (e.g., "推理用 gemma, 生成随便") | Use provided for 🧠; default to cloud Agent for ⚡. Mark ⚡ as `[自动检测 → 云端]`. |
+| **User manually edits `MODEL_CONFIG.md`** (changes port/model) | On next task, TRAE runs a lightweight re-probe (`curl` 8080/11434/1234) and compares with stored config: if the user's manual change conflicts with actual probe results, **trust the live probe** and notify the user: "检测到您手动修改了配置，但实际检测到的服务状态已变化。以实时检测结果为准（已更新 §0 时间戳）。" |
+| **User provides invalid model name** (service returns error on specified port) | TRAE retries once with a 5-second timeout. If still fails, marks as `[服务不可用]` and routes through cloud Agent. Notifies user: "您指定的模型端口无法连接，已临时切换为云端路由。" |
+| **User completely ignores the dialog** (no response after 3 follow-ups) | TRAE defaults to: 🧠 = cloud Agent (same as ⚡). Proceeds with development, logs a warning in §0: `note: "user did not respond after 3 attempts; using cloud Agent for both roles"`. |
+
+**IMPORTANT:** TRAE MUST NOT proceed with development until the user has provided:
+- Reasoning model name (🧠), AND
+- Generation model name (⚡), OR
+- One of the above boundary case fallbacks has been triggered.
 
 ### Static Physical Blacklist (静态物理黑名单 — 绝对死线)
 
@@ -438,15 +455,28 @@ To ensure consistency between frontend and backend data contracts, a **"Contract
 
 **When token budget is exceeded:** TRAE MUST proactively stop the retrieval chain and ask the user for precise file paths.
 
-### Pre-Task Memory Checklist (v1.7 — Updated)
+### Pre-Task Memory Checklist (v1.8 — Updated)
 
-Before starting ANY task, TRAE MUST:
+Before starting ANY task, TRAE MUST determine which phase the session is in and follow the appropriate path:
+
+**Phase A — Initialization Phase (首次初始化):**
 1. **Run auto-detection first** — detect physical memory (`sysctl`) + probe model services (`curl` 8080/11434/1234)
 2. **Present interactive dialog** — show detected results + ask user to confirm/correct + collect model names (🧠/⚡)
 3. **Resolve contract file paths** from project tech stack → fill in variable placeholders
 4. **Match the tier** from the five-tier table above based on confirmed memory
 5. **Respect the static blacklist** — never scan `presets/`, `node_modules/`, or build artifacts
 6. **Use Contract Green Pass** only for contract alignment — never for business logic exploration
+
+**Phase B — Subsequent Tasks (后续任务 — 复用策略):**
+1. **Check if `MODEL_CONFIG.md` exists and has valid §0** (model names 🧠/⚡ are present):
+   - **YES → Skip interactive dialog.** Use existing configuration directly. Proceed to Step 2 below.
+   - **NO (missing or incomplete):** Run a lightweight re-probe (`curl` 8080/11434/1234 only, skip `sysctl`) and compare with stored config:
+     - If detected services changed (e.g., Ollama was not running before but now is, or port changed) → **re-run full interactive dialog** (go to Phase A Step 2).
+     - If nothing changed → silently update the probe timestamps in §0 and proceed to Step 2 below.
+2. **Resolve contract file paths** from project tech stack → fill in variable placeholders (only if not already resolved)
+3. **Match the tier** from the five-tier table above based on confirmed memory (use stored value)
+4. **Respect the static blacklist** — never scan `presets/`, `node_modules/`, or build artifacts
+5. **Use Contract Green Pass** only for contract alignment — never for business logic exploration
 
 > **Why this matters:** TRAE detects first, user confirms — no guessing, no blind probing. Every memory configuration from 8GB laptops to 192GB workstations gets its own optimal rules. **Always prefer file-path-specific reads over broad directory scans.**
 
@@ -538,36 +568,47 @@ This information is written to `MODEL_CONFIG.md §0` with source attribution: `[
 | **单元测试 / 测试用例** | ⚡ Generation | 模式化程度高，适合快速生成 |
 | **文档撰写 / PRD** | 🧠 Reasoning | 需要逻辑性和完整性 |
 
-### Model Routing Decision Flow (v1.7 — Updated)
+### Model Routing Decision Flow (v1.8 — Updated)
 
 ```
 Session start
     │
-    ├── Step 0a: Auto-detect physical memory (sysctl)
-    ├── Step 0b: Auto-probe model services (curl 8080/11434/1234)
+    ├── Step 0: Check if MODEL_CONFIG.md §0 exists and is valid
     │
-    ▼
-Present Interactive Dialog — show detected results + ask user to confirm
+    ├── YES → Phase B (Subsequent Task — 复用已有配置)
+    │         ├── Lightweight re-probe (curl only, skip sysctl)
+    │         ├── If services changed → back to Phase A dialog
+    │         └── If unchanged → use stored config directly
     │
-    ▼
-User confirms/corrects + provides model names (🧠/⚡)
-    │
-    ▼
-Write to MODEL_CONFIG.md §0 (with source attribution)
-    │
-    ▼
-User request received
-    │
-    ▼
-Is the task about "what to build" or "how to fix"?
-   ├── YES → Route to 🧠 Reasoning Model (user-provided)
-   │         └─ Analyze requirements, identify edge cases, design solution
-   │
-   └── NO → Is the task about "write code" or "generate files"?
-              ├── YES → Route to ⚡ Generation Model (user-provided)
-              │         └─ Generate complete, compilable code files
+    └── NO → Phase A (Initialization — 首次初始化)
               │
-              └── UNKNOWN → Ask user to clarify task type
+              ├── Step 0a: Auto-detect physical memory (sysctl)
+              ├── Step 0b: Auto-probe model services (curl 8080/11434/1234)
+              │
+              ▼
+         Present Interactive Dialog — show detected results + ask user to confirm
+              │
+              ▼
+         User confirms/corrects + provides model names (🧠/⚡)
+              │
+              ├── Boundary case? → Apply fallback rule (auto-select / cloud-only / etc.)
+              │
+              ▼
+         Write to MODEL_CONFIG.md §0 (with source attribution)
+              │
+              ▼
+         User request received
+              │
+              ▼
+         Is the task about "what to build" or "how to fix"?
+            ├── YES → Route to 🧠 Reasoning Model (user-provided)
+            │         └─ Analyze requirements, identify edge cases, design solution
+            │
+            └── NO → Is the task about "write code" or "generate files"?
+                       ├── YES → Route to ⚡ Generation Model (user-provided)
+                       │         └─ Generate complete, compilable code files
+                       │
+                       └── UNKNOWN → Ask user to clarify task type
 ```
 
 > **TRAE's role:** TRAE itself does NOT execute code. TRAE's job is to:

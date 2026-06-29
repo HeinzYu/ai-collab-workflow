@@ -3,7 +3,7 @@
 > AI 协作开发的操作系统级工程规范 —— 让 AI Agent 在长期项目中始终保持对上下文的准确理解。  
 > *An OS-level engineering specification for AI-assisted development — keeping AI Agents context-aware across long-running projects.*
 
-[![Version](https://img.shields.io/badge/version-1.7-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.8-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -160,7 +160,8 @@ Disposable — Cleaned up quarterly
 | v1.4 | 2026-06-29 | 5-tier memory coverage, environment auto-detect, model-agnostic routing, templatized contracts |
 | v1.5 | 2026-06-29 | Interactive model dialog: TRAE asks user about local model setup before auto-detection; custom ports; source attribution |
 | v1.6 | 2026-06-29 | **架构重构**：TRAE 先检测、用户再确认 — 对话框展示自动检测结果让用户确认/纠正，用户只需提供模型名；全局前置检测覆盖所有模式；Full 模式在已有代码目录自动降级为 Merge |
-| v1.7 | 2026-06-29 | **Bug 修复**：Full / Small / MVP 模式补充交互式模型对话 — 从 0 开始的新项目也会先运行模型对话，再执行文件生成
+| v1.7 | 2026-06-29 | **Bug 修复**：Full / Small / MVP 模式补充交互式模型对话 — 从 0 开始的新项目也会先运行模型对话，再执行文件生成 |
+| v1.8 | 2026-06-29 | **边界补全**：初始化后配置复用策略（后续任务不重复对话）；7 种边界情况降级处理（用户不理/随便填/只填一个/手工改配置等）
 
 详见 / *See* [CHANGELOG.md](CHANGELOG.md)
 

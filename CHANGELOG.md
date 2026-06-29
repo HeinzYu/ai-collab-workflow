@@ -64,6 +64,26 @@ All notable changes to ai-collab-workflow will be documented in this file.
   - MVP 模式：Step 0 (全局前置检测) → **Step 1 (交互式模型对话)** → Step 2-3 (生成文件)
   - 所有模式现在统一：先对话确认模型信息，再执行文件生成
 
+## [1.8] — 2026-06-29
+
+### Added
+- **初始化后配置复用策略 (Phase B)**：后续任务不再重复弹出模型对话，根据 `MODEL_CONFIG.md §0` 有效性决定是否复用
+  - Phase A（首次初始化）：完整检测 + 对话确认 + 写配置
+  - Phase B（后续任务）：检查 §0 有效性 → 若有效则直接复用，仅做轻量 re-probe（`curl` only, 跳过 `sysctl`）
+  - 服务状态变更时才触发重新对话
+- **7 种边界情况降级处理**：
+  - "随便/你定吧/auto"：TRAE 自动用首个本地模型做 🧠，云端做 ⚡，标注 `[TRAE 自动选择]`
+  - "不用本地模型，全部用云端"：跳过本地路由，全走当前云端 Agent，标记 `local_models: "none (cloud only)"`
+  - 🧠 和 ⚡ 同名：接受，同模型双角色，标注 `note: "same model for both roles"`
+  - 只说一个模型名：给出另一个 → 默认对接云端 Agent
+  - 手动编辑 `MODEL_CONFIG.md`：重新探测对比，以实时结果为准，通知用户
+  - 指定模型端口不可用：重试一次 → 失败则切换云端路由
+  - 完全不回复（3 次追问后）：默认全部走云端 Agent，记录告警
+
+### Changed
+- **Pre-Task Memory Checklist** 重构为 Phase A / Phase B 双阶段
+- **Model Routing Decision Flow** 新增 Step 0 配置有效性检查，区分首次与后续任务路径
+
 ---
 
 ## [1.5] — 2026-06-29
