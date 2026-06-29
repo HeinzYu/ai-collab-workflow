@@ -1116,9 +1116,11 @@ Based on `scope` field in PROJECT_CONTEXT.md:
 
 | Field | Value |
 |-------|-------|
-| **Current version** | 1.6 |
+| **Current version** | 1.8 |
 | **Created** | 2026-06-27 |
 | **Last updated** | 2026-06-29 |
+| **New in 1.8** | **边界补全**：初始化后配置复用策略（Phase A/B — 后续任务不再重复弹出模型对话）；7 种边界情况降级处理（用户不理/随便填/只填一个/手工改配置等） |
+| **New in 1.7** | **Bug 修复**：Full / Small / MVP 模式补充交互式模型对话 — 从 0 开始的新项目也会先运行模型对话，再执行文件生成 |
 | **New in 1.6** | **架构重构：TRAE 先检测，用户再确认** — 交互式对话不再是"填空"而是"确认"：TRAE 先自动检测物理内存和模型服务状态（sysctl + curl），展示结果让用户确认/纠正，用户只需提供模型名（🧠/⚡）；检测环节提升为全局前置步骤，所有模式（Full/Small/MVP）统一先检测目录状态再决定行为；Full 模式在已有代码目录中自动降级为 Merge 模式以避免覆盖用户源码 |
 | **New in 1.5** | Interactive model dialog: TRAE asks user about their local model setup (memory, services, model names, ports) before any auto-detection; user fills in dialog box and confirms — no blind curl probing needed; fallback to auto-detection only if user skips fields; custom port support for both Reasoning and Generation models; source attribution in MODEL_CONFIG.md §0 (`[用户确认]` vs `[自动探测]`) |
 | **New in 1.4** | True environment agnosticism: 5-tier continuous memory coverage (T1–T5 eliminates blind spots), start-of-session auto-detect (memory + model services → writable to MODEL_CONFIG.md §0), model-agnostic routing (Reasoning vs Generation roles, not hardcoded model names), templatized Contract Green Pass (variable placeholders resolved by project type), pure single-layer project handling (auto-skip cross-module logic), works with any model ecosystem (oMLX/Ollama/LM Studio/cloud-only) |
