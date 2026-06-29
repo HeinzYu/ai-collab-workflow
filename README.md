@@ -1,7 +1,6 @@
 # ai-collab-workflow
 
-> AI 项目文档框架 — 让 TRAE、Claude Code、Cursor、Codex 等 AI Agent 跨会话保持上下文一致  
-> *AI Project Documentation Framework — Keep context consistent across sessions for TRAE, Claude Code, Cursor, Codex, and more*
+> AI Project Documentation Framework — Keep AI Agents (TRAE, Claude Code, Cursor, Codex, etc.) context-aware across sessions, no matter how long the project gets.
 
 [![Version](https://img.shields.io/badge/version-1.8-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -9,9 +8,14 @@
 [![Language](https://img.shields.io/badge/language-markdown-DB4936.svg)]()
 [![Topics](https://img.shields.io/badge/topics-ai--agents%2C%20developer--tools%2C%20project--templates-blue?style=flat)]()
 
+<details>
+<summary>📖 中文版本 / Chinese Version</summary>
+
+> AI 项目文档框架 — 让 TRAE、Claude Code、Cursor、Codex 等 AI Agent 跨会话保持上下文一致
+
 ---
 
-## 你的问题，它来解 / When You Face This
+## 你的问题，它来解
 
 | 场景 | 痛点 | ai-collab-workflow 怎么帮 |
 |------|------|------------------------|
@@ -21,9 +25,7 @@
 | 🤖 **换了个 AI 工具，所有规则要重写** | "从 Cursor 换到 TRAE，又要重新调一遍" | 工具无关设计，规则一套通用所有 AI Agent |
 | 🧹 **项目做了一半，不知道维护什么** | "这个月该归档哪些文件？谁说了算？" | 周/月/季度自动维护指令，一键清理 |
 
----
-
-## 快速开始 / Quick Start
+## 快速开始
 
 ### 3 分钟安装
 
@@ -39,11 +41,9 @@ cp -r ai-collab-workflow/.trae/skills/ai-collab-workflow ~/.trae/skills/
 
 > "这是一个完整的 Apple App 项目，包含登录、首页、设置等功能"
 
-TRAE 会自动初始化整个框架。[手动安装方式](#手动安装) →
+TRAE 会自动初始化整个框架。
 
----
-
-## 你能得到什么 / What You Get
+## 你能得到什么
 
 ### 🧠 AI 有了"项目记忆"
 - 每次新对话，AI 都知道项目的 PRD、架构、已完成和待办事项
@@ -56,14 +56,12 @@ TRAE 会自动初始化整个框架。[手动安装方式](#手动安装) →
 ```
 
 ### 🖥️ 任何设备都能跑
-启动时自动检测你的物理内存，从 16GB 笔记本到 128GB 工作站，自动适配最合适的运行模式。
+启动时自动检测物理内存，从 16GB 笔记本到 128GB 工作站，自动适配最合适的运行模式。
 
 ### 🤖 换 AI 工具不换规则
 一套框架适配 TRAE、Claude Code、Cursor、Codex、Gemini CLI 等任何 AI Coding Agent。
 
----
-
-## 目录结构 / Structure
+## 目录结构
 
 ```
 ai-collab-workflow/
@@ -76,9 +74,7 @@ ai-collab-workflow/
 └── CONTRIBUTING.md          贡献指南
 ```
 
----
-
-## 深入阅读 / Go Deeper
+## 深入阅读
 
 | 你想了解 | 看这里 |
 |---------|--------|
@@ -87,15 +83,102 @@ ai-collab-workflow/
 | 如何适配已有项目或不同平台 | [补充文档](TEMPLATE_FRAMEWORK/SUPPLEMENTARY/README.md) |
 | 版本变更记录 | [CHANGELOG](CHANGELOG.md) |
 
+## 贡献
+
+欢迎贡献！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 许可
+
+MIT — See [LICENSE](LICENSE)
+
+</details>
+
 ---
 
-## 贡献 / Contributing
+## When You Face This
 
-欢迎贡献！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。  
-*Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md).*
+| Scenario | Pain Point | How ai-collab-workflow Helps |
+|------|------|------|
+| 🔄 **New session, AI forgot past decisions** | "We agreed on OAuth login — why is it back to email auth?" | Persistent project memory across sessions |
+| 📦 **Project grows, AI starts hallucinating** | "This file was written three months ago — why is it being rewritten?" | Context lifecycle tiers + periodic maintenance |
+| 💻 **AI is burning your local RAM** | "48GB Mac froze — model went OOM" | Device-adaptive 5-tier protection, auto-detects your hardware |
+| 🤖 **Switched AI tools, rules need rewriting** | "Migrated from Cursor to TRAE — redoing everything" | Tool-agnostic design, one framework for all AI Agents |
+| 🧹 **Mid-project, no idea what to maintain** | "What should I archive this month?" | Weekly / monthly / quarterly maintenance commands |
 
 ---
 
-## 许可 / License
+## Quick Start
+
+### 3-Minute Setup
+
+```bash
+# 1. Clone
+git clone https://github.com/HeinzYu/ai-collab-workflow.git
+
+# 2. Install as TRAE Skill (recommended)
+cp -r ai-collab-workflow/.trae/skills/ai-collab-workflow ~/.trae/skills/
+```
+
+In your project, tell TRAE:
+
+> "This is a full-stack web app with login, dashboard, and settings features"
+
+TRAE initializes the entire framework automatically.
+
+---
+
+## What You Get
+
+### 🧠 AI Gets "Project Memory"
+- Every new session, AI knows the PRD, architecture, completed items, and pending tasks
+- Solved problems stay solved; decisions are not overturned
+
+### 📋 Full Pipeline: Idea → Production
+```
+  PRD   →  Architecture  →  Development  →  Testing  →  Deployment
+          tech stack         code            auto       app store
+```
+
+### 🖥️ Runs on Any Machine
+Auto-detects your physical RAM on startup. Adapts automatically from a 16GB laptop to a 128GB workstation.
+
+### 🤖 Switch AI Tools, Keep the Rules
+One framework works with TRAE, Claude Code, Cursor, Codex, Gemini CLI — any AI Coding Agent.
+
+---
+
+## Structure
+
+```
+ai-collab-workflow/
+├── .trae/skills/            ← Copy to ~/.trae/skills/ to install
+├── TEMPLATE_FRAMEWORK/      ← Copy to your project root
+│   ├── AGENTS.md            Global rules for AI Agents
+│   ├── PROJECT_CONTEXT.md   Project core (auto-filled by AI)
+│   └── MODEL_CONFIG.md      AI model configuration
+├── CHANGELOG.md             Version history
+└── CONTRIBUTING.md          Contribution guide
+```
+
+---
+
+## Go Deeper
+
+| You want to learn | Go here |
+|---------|--------|
+| Full feature specs (Context tiers, model routing, maintenance) | [Core Doc](AI-Development-Workflow.md) |
+| What each template file does | [Template Guide](TEMPLATE_FRAMEWORK/TEMPLATE_GUIDE.md) |
+| Adapting to existing projects or other platforms | [Supplementary Docs](TEMPLATE_FRAMEWORK/SUPPLEMENTARY/README.md) |
+| Version changelog | [CHANGELOG](CHANGELOG.md) |
+
+---
+
+## Contributing
+
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## License
 
 MIT — See [LICENSE](LICENSE)
