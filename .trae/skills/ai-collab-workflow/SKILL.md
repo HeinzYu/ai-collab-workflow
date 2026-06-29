@@ -8,7 +8,7 @@ description: Initialize any project (Apple App / Web / Backend / Game) with a st
 > A structured documentation framework for human + AI collaborative development using TRAE.
 > Supports Apple App, Web, Backend, Game, and any software project type.
 > Designed for both human developers and TRAE Agent.
-> **Version:** 1.5 | **Last Updated:** 2026-06-29
+> **Version:** 1.6 | **Last Updated:** 2026-06-29
 
 ---
 
@@ -66,6 +66,10 @@ Project/
 **Trigger:** "这是一个完整的 Apple App 项目，包含 [features]...等功能"
 
 **Actions:**
+0. **Run Global Pre-Detection** (see § above) — check if directory has existing code
+   - If directory is empty → proceed as normal Full mode (Step 1 below)
+   - **If directory has existing code → downgrade to Merge Mode** (skip Steps 1-6 below, go to §Merge)
+     - Explain to user: "您说这是新项目，但目录中已有源码文件。为避免覆盖您的代码，我将以 Merge 模式处理。"
 1. Generate complete directory structure
 2. Initialize all core files (AGENTS.md, PROJECT_CONTEXT.md, MODEL_CONFIG.md, REFERENCES.md, TEMPLATE_GUIDE.md, STRUCTURE.md)
 3. Initialize all module placeholders (PRD/, ARCHITECTURE/, TESTING/, DEPLOYMENT/, DEVLOG/, CONTINUE/)
@@ -78,6 +82,10 @@ Project/
 **Trigger:** "这是一个简单的工具 App，只需要 [feature1] 和 [feature2]"
 
 **Actions:**
+0. **Run Global Pre-Detection** (see § above) — check if directory has existing code
+   - If directory is empty → proceed as normal Small mode (Step 1 below)
+   - **If directory has existing code → downgrade to Merge Mode** (skip Steps 1-3 below, go to §Merge)
+     - Explain to user: "您说这是小型项目，但目录中已有源码文件。为避免覆盖您的代码，我将以 Merge 模式处理。"
 1. Generate core files + selected module placeholders
 2. Skip TESTING/, DEPLOYMENT/
 3. Mark `scope` as `"small"` in PROJECT_CONTEXT.md
@@ -87,14 +95,18 @@ Project/
 **Trigger:** "这是一个原型验证，只需要 [one feature]"
 
 **Actions:**
+0. **Run Global Pre-Detection** (see § above) — check if directory has existing code
+   - If directory is empty → proceed as normal MVP mode (Step 1 below)
+   - **If directory has existing code → downgrade to Merge Mode** (skip Steps 1-2 below, go to §Merge)
+     - Explain to user: "您说这是原型验证，但目录中已有源码文件。为避免覆盖您的代码，我将以 Merge 模式处理。"
 1. Generate core files + only the corresponding PRD placeholder
 2. Skip all other modules, mark `scope` as `"mvp"`
 
 ---
 
-## ⚠️ Existing Project Detection & Merge Strategy (CRITICAL — Read First)
+## ⚠️ 全局前置检测（所有模式统一执行 — CRITICAL）
 
-**BEFORE initializing any files, TRAE MUST check whether the target directory is an existing project.**
+**BEFORE determining the mode or generating any files, TRAE MUST check whether the target directory is an existing project.** This step runs for ALL modes (Full / Small / MVP / Merge).
 
 ### Detection: Is this an existing project?
 
@@ -110,18 +122,42 @@ Check for the following signals in the working directory:
 
 When the user says things like "帮我给这个项目加上协同工作流" or "为这个项目初始化协作开发模板", TRAE MUST:
 
-1. **Inventory existing files** — list all files already in the directory
-2. **Present a plan** before writing anything:
+**Step 0 — Run Global Pre-Detection + Interactive Model Dialog (CRITICAL — Must Execute Before Any File Operations):**
+Before doing anything else, TRAE MUST run two sub-steps in order:
+
+**Step 0a — Global Pre-Detection (目录状态检测):**
+Check if the target directory has existing code (source files, package.json, .git, etc.).
+- If empty → proceed as "from scratch" initialization (inventory will be empty)
+- If has existing code → note which files exist for merge planning
+
+**Step 0b — Interactive Model Dialog (交互式模型对话):**
+After pre-detection, TRAE MUST run the **Start-of-Session Interactive Model Dialog** (defined in §0 below). This dialog is now designed differently:
+
+> **Key change:** TRAE does NOT ask the user to fill in information they may not know. Instead, TRAE **first auto-detects** physical memory and local model services, then presents the results for the user to **confirm or correct**.
+
+The dialog flow:
+1. TRAE runs `sysctl -n hw.memsize` to get physical memory
+2. TRAE runs three `curl` probes against default ports (8080/11434/1234) to detect local model services
+3. TRAE presents the results in a dialog box for user confirmation/correction (see lines 231-265 below)
+4. User confirms or corrects specific items; only model names (🧠/⚡) remain required user input
+5. TRAE waits for the user's response before proceeding
+
+**Step 1 — Write to MODEL_CONFIG.md §0:**
+After the dialog, write results into `MODEL_CONFIG.md` under a new section (see lines 280-300 for format).
+
+**Step 2 — Inventory existing files** — list all files already in the directory
+**Step 3 — Present a plan** before writing anything:
    ```
-   检测到这是一个已有项目。我建议以下操作：
+   检测到这是一个已有项目。在开始工作前，已与您确认模型信息（见 MODEL_CONFIG.md §0）。
+   我建议以下操作：
    - 保留现有源码文件（不修改）
    - 新增以下框架文件：AGENTS.md, PROJECT_CONTEXT.md, ...
    - 以下文件已存在，建议：[跳过 / 合并 / 备份]
    - 请问如何继续？
    ```
-3. **Never overwrite** — existing files are only merged with explicit user consent
-4. **Fill PROJECT_CONTEXT.md from context** — auto-detect tech stack from existing files (e.g., `package.json` → "Node.js project")
-5. **Create DEVLOG/ and CONTINUE/** — but do NOT create PRD/ placeholders for already-implemented features
+**Step 4 — Never overwrite** — existing files are only merged with explicit user consent
+**Step 5 — Fill PROJECT_CONTEXT.md from context** — auto-detect tech stack from existing files (e.g., `package.json` → "Node.js project")
+**Step 6 — Create DEVLOG/ and CONTINUE/** — but do NOT create PRD/ placeholders for already-implemented features
 
 ### Per-file merge rules
 
@@ -212,56 +248,92 @@ Based on the detected memory, TRAE selects the appropriate strategy tier below. 
 
 ### Start-of-Session Interactive Model Dialog (启动交互式模型对话 — CRITICAL UPDATE)
 
-**Before running any automatic detection, TRAE MUST first ask the user about their local model setup via an interactive dialog.** Users generally know what they're running — no need to probe blindly.
+**TRAE does NOT ask the user to fill in information they may not know.** Instead, TRAE **first auto-detects** physical memory and local model services, then presents the results for the user to **confirm or correct**. Only the model names (🧠/⚡) are genuinely required from the user.
 
-#### Step 1: Interactive User Dialog (交互对话收集)
+#### Step 0: Auto-Detection (自动检测 — TRAE runs first)
 
-TRAE MUST present the following dialog to the user **before any file operations**:
+Before showing any dialog, TRAE MUST execute these two operations silently:
+
+**0a. Physical memory detection:**
+```bash
+sysctl -n hw.memsize | awk '{printf "%.0f\n", $1/1024/1024/1024}'
+```
+Store the result (e.g., `32` for 32GB).
+
+**0b. Local model service probing:**
+Probe three default ports via `curl --connect-timeout 2 -s http://localhost:<port>/api/tags` (Ollama API format) or equivalent. Accept any 2xx response as "running":
+| Service | Default Port | Detect Via |
+|---------|-------------|------------|
+| oMLX | 8080 | `curl -s --connect-timeout 2 http://localhost:8080/v1/models` |
+| Ollama | 11434 | `curl -s --connect-timeout 2 http://localhost:11434/api/tags` |
+| LM Studio | 1234 | `curl -s --connect-timeout 2 http://localhost:1234/v1/models` |
+
+If a model list is returned, extract model names for display.
+
+#### Step 1: Present Dialog (展示检测结果 + 收集用户输入)
+
+TRAE MUST present the following dialog to the user **before any file operations**. The dialog shows **detected results first**, then asks the user to **confirm or correct**:
 
 ```
 === 启动环境确认 ===
 
-检测到这是一个已有项目。在开始工作前，请先确认以下信息：
+[检测结果上下文：空目录 / 已有项目]
 
-1. 物理内存（可选）— 直接回车跳过 → TRAE 自动检测
-   您的设备内存是？ (如: "16GB" / "32GB" / "64GB")
+在开始工作前，请确认以下信息——
+（TRAE 已完成检测，您只需确认或修改有误的项）
 
-2. 本地模型服务（可选）— 直接回车跳过 → TRAE 自动探测端口
-   您运行了什么本地模型服务？
-   - oMLX (默认端口 8080)
-   - Ollama (默认端口 11434)
-   - LM Studio (默认端口 1234)
-   - 其他服务（请告诉我名称和端口号）
+📊 物理内存：检测到 [e.g., 32] GB
+   如果不对，请告诉我您的实际内存大小
 
-3. 推理模型 🧠 — 必填
+🤖 本地模型服务：
+   - oMLX (port 8080): [✅ 运行中 / ❌ 未运行]
+   - Ollama (port 11434): [✅ 运行中 — [model-name] / ❌ 未运行]
+   - LM Studio (port 1234): [✅ 运行中 / ❌ 未运行]
+
+   如果您还运行了其他服务（名称 + 端口），请告诉我
+
+🧠 推理模型 — 必填
    您用于需求分析/架构设计/Debug 的模型名？ (如: "gemma-3-27b" / "qwen-2.5-72b")
 
-4. 生成模型 ⚡ — 必填
+⚡ 生成模型 — 必填
    您用于代码编写/文件生成的模型名？ (如: "gpt-4o" / "claude")
 
-5. 自定义端口（可选）— 如果您的模型服务使用了非默认端口，请告诉我
+🔧 自定义端口（可选）— 如果您的模型服务使用了非默认端口
    推理模型端口：[留空 = 使用默认]
    生成模型端口：[留空 = 使用默认]
 
-如果您不确定任何一项：直接回车跳过，TRAE 会自动检测可用服务。
+────────────────────────
+
+请回复"确认"以使用检测结果；
+如需修改，直接告诉我哪一项改成什么。
+```
+
+**When a detected service returns model names** (e.g., Ollama `gemma-3-12b`), display them inline:
+```
+   - Ollama (port 11434): ✅ 运行中 — gemma-3-12b, qwen-2.5-7b
 ```
 
 #### Step 2: User Response Handling (用户响应处理)
 
-Based on the user's response in the dialog:
+**A. User confirms ("确认") — no changes:**
+- All detected values are used as-is
+- Write to `MODEL_CONFIG.md §0` with source: `[自动检测]`
 
-**A. User provided all info:**
-- Use user-provided values directly (memory, model names, ports)
-- Write to `MODEL_CONFIG.md §0` with user confirmation status: `[用户确认]`
+**B. User corrects specific items:**
+Possible corrections and how TRAE handles them:
 
-**B. User skipped some fields (directly pressed Enter):**
-- For memory: run `sysctl -n hw.memsize` to auto-detect
-- For model service: run the three `curl` probes (lines 220-227) to auto-detect
-- For model names: ask follow-up question if no local service is found
+| User says | TRAE action |
+|-----------|-------------|
+| "内存是 64GB" | Update memory → mark source as `[用户确认]` |
+| "Ollama 端口是 11435" | Update port → re-probe on corrected port |
+| "我跑了 oMLX" (but not detected) | Ask for port; re-probe on user's port |
+| "推理用 gemma-3-27b" | Set 🧠 model name → `[用户确认]` |
+| "生成用 gpt-4o" | Set ⚡ model name → `[用户确认]` |
+| "推理端口 8081" | Set 🧠 custom port → `[用户确认]` |
 
-**C. User skipped everything (pressed Enter all):**
-- Run full auto-detection (memory + curl probes)
-- If no local model found, route all tasks through cloud Agent (Claude/GPT/TRAE)
+**C. User provides model names only (most common pattern):**
+- Physical memory and detected services remain auto-detected
+- Model names (🧠/⚡) are user-provided → `[用户确认]`
 
 #### Step 3: Write to MODEL_CONFIG.md §0 (写入配置)
 
@@ -271,31 +343,39 @@ After the dialog, TRAE MUST write results into `MODEL_CONFIG.md` under a new sec
 ## 0. 环境自检结果 & 模型角色映射
 
 - **对话时间：** [auto-generated timestamp]
-- **物理内存：** [user-provided OR auto-detected] GB
-  - 来源：[用户填写 / sysctl 自动检测]
+- **物理内存：** [detected + user-confirmed] GB
+  - 来源：[用户确认 / 自动检测]
 - **策略档位：** [Tier 1/2/3/4/5 — from table below]
-- **可用模型服务：** [user-provided OR auto-detected services]
-  - oMLX (port 8080): [running / not running]
-  - Ollama (port 11434): [running / not running]
-  - LM Studio (port 1234): [running / not running]
-  - 其他服务: [user-specified service name + port]: [running / not running]
-- **推理模型 (🧠)：** [user-provided OR auto-detected model name]
-  - 端口：[user-specified port OR default 8080/11434/1234]
-  - 来源：[用户填写 / API 自动探测]
-- **生成模型 (⚡)：** [user-provided OR auto-detected model name]
-  - 端口：[user-specified port OR default 8080/11434/1234]
-  - 来源：[用户填写 / API 自动探测]
+- **可用模型服务：** (auto-probed before dialog)
+  - oMLX (port 8080): [running / not running] — 来源：[自动检测]
+  - Ollama (port 11434): [running / not running] — 来源：[自动检测]
+  - LM Studio (port 1234): [running / not running] — 来源：[自动检测]
+  - 其他服务: [user-specified service name + port]: [running / not running] — 来源：[用户确认]
+- **推理模型 (🧠)：** [user-provided model name]
+  - 端口：[user-specified OR default 8080/11434/1234]
+  - 来源：[用户确认]
+- **生成模型 (⚡)：** [user-provided model name]
+  - 端口：[user-specified OR default 8080/11434/1234]
+  - 来源：[用户确认]
 ```
+
+**Source marking rules (updated):**
+- Physical memory: always `[自动检测]` unless user explicitly corrected it → then `[用户确认]`
+- Model services: always `[自动检测]` (TRAE probes before dialog)
+- Model names (🧠/⚡): always `[用户确认]` (user provides them in the dialog)
 
 #### Step 4: Proceed with Task (继续任务)
 
-- **If user provided model names:** Use them directly for routing (no further probing needed)
-- **If user skipped and auto-detection found services:** Present detected model list, ask user to confirm which one maps to Reasoning/Generation
-- **If no local model found:** Skip model routing entirely; route all tasks through current cloud Agent
+After writing MODEL_CONFIG.md §0:
 
-**IMPORTANT:** TRAE MUST NOT proceed with development until the user has either:
-- Confirmed model information in the dialog, OR
-- Explicitly said "skip" / "auto-detect for me"
+- **If user provided model names (🧠/⚡):** Use them directly for routing — no further probing
+- **If user did not provide model names:** Ask a focused follow-up: "请告诉我您的推理模型名（🧠）和生成模型名（⚡）"
+- **If no local model detected at all:** Note in MODEL_CONFIG.md §0, route all tasks through current cloud Agent
+
+**IMPORTANT:** TRAE MUST NOT proceed with development until the user has provided:
+- Reasoning model name (🧠), AND
+- Generation model name (⚡), OR
+- Explicitly said "auto-detect for me" / "use cloud"
 
 ### Static Physical Blacklist (静态物理黑名单 — 绝对死线)
 
@@ -346,17 +426,17 @@ To ensure consistency between frontend and backend data contracts, a **"Contract
 
 **When token budget is exceeded:** TRAE MUST proactively stop the retrieval chain and ask the user for precise file paths.
 
-### Pre-Task Memory Checklist (v1.5 — Updated)
+### Pre-Task Memory Checklist (v1.6 — Updated)
 
 Before starting ANY task, TRAE MUST:
-1. **Run interactive dialog** — ask user about their model setup (memory, services, model names, ports)
-2. **Detect physical memory** via `sysctl -n hw.memsize` (only if user skipped — cached for session)
+1. **Run auto-detection first** — detect physical memory (`sysctl`) + probe model services (`curl` 8080/11434/1234)
+2. **Present interactive dialog** — show detected results + ask user to confirm/correct + collect model names (🧠/⚡)
 3. **Resolve contract file paths** from project tech stack → fill in variable placeholders
 4. **Match the tier** from the five-tier table above based on confirmed memory
 5. **Respect the static blacklist** — never scan `presets/`, `node_modules/`, or build artifacts
 6. **Use Contract Green Pass** only for contract alignment — never for business logic exploration
 
-> **Why this matters:** The five-tier system eliminates blind spots — every memory configuration from 8GB laptops to 192GB workstations gets its own optimal rules. Users never need to configure anything manually — TRAE asks in the dialog, fills gaps with auto-detection. **Always prefer file-path-specific reads over broad directory scans.**
+> **Why this matters:** TRAE detects first, user confirms — no guessing, no blind probing. Every memory configuration from 8GB laptops to 192GB workstations gets its own optimal rules. **Always prefer file-path-specific reads over broad directory scans.**
 
 ---
 
@@ -416,25 +496,23 @@ This section defines a **model-agnostic** routing strategy. It does NOT assume s
 
 ### User Model Mapping (Filled from Interactive Dialog)
 
-During the start-of-session interactive dialog, TRAE asks the user to provide:
-- Their Reasoning model name (🧠)
-- Their Generation model name (⚡)
-- Optional: custom ports for each service
+During the start-of-session interactive dialog, TRAE first auto-detects then asks the user to:
+- Confirm or correct detected results (memory, services)
+- Provide their Reasoning model name (🧠) and Generation model name (⚡)
+- Optionally specify custom ports
 
-This information is written to `MODEL_CONFIG.md §0` with source attribution: `[用户确认]` or `[自动探测]`.
+This information is written to `MODEL_CONFIG.md §0` with source attribution: `[自动检测]` for probed data, `[用户确认]` for user-provided data.
 
 ```markdown
 ## 0. 环境自检结果 & 模型角色映射
 
 | 角色 | 用户指定模型名 | 来源 |
 |------|-------------|------|
-| 🧠 Reasoning | `[user-provided via dialog OR auto-detected]` | [oMLX / Ollama / LM Studio / cloud] |
-| ⚡ Generation | `[user-provided via dialog OR auto-detected]` | [oMLX / Ollama / LM Studio / cloud] |
+| 🧠 Reasoning | `[user-provided via dialog]` | [用户确认] |
+| ⚡ Generation | `[user-provided via dialog]` | [用户确认] |
 ```
 
-**If the user provided model names in the dialog:** Use them directly for routing — no further probing needed.
-
-**If user skipped and auto-detection found services:** Present detected model list, ask user to confirm which one maps to Reasoning/Generation.
+**Model names are always user-provided** — TRAE detects services (oMLX/Ollama/LM Studio) but does not map model names to roles without user consent.
 
 **If no local model found:** Route all tasks through the current cloud Agent (Claude/GPT/TRAE). The routing logic still applies (which task goes to which role), even if both roles are served by the same cloud model.
 
@@ -448,34 +526,43 @@ This information is written to `MODEL_CONFIG.md §0` with source attribution: `[
 | **单元测试 / 测试用例** | ⚡ Generation | 模式化程度高，适合快速生成 |
 | **文档撰写 / PRD** | 🧠 Reasoning | 需要逻辑性和完整性 |
 
-### Model Routing Decision Flow (v1.5 — Updated)
+### Model Routing Decision Flow (v1.6 — Updated)
 
 ```
-Session start → Run Interactive User Dialog (memory, services, model names, ports)
-        │
-        ▼
-User confirms or skips → Write to MODEL_CONFIG.md §0 (with source attribution)
-        │
-        ▼
+Session start
+    │
+    ├── Step 0a: Auto-detect physical memory (sysctl)
+    ├── Step 0b: Auto-probe model services (curl 8080/11434/1234)
+    │
+    ▼
+Present Interactive Dialog — show detected results + ask user to confirm
+    │
+    ▼
+User confirms/corrects + provides model names (🧠/⚡)
+    │
+    ▼
+Write to MODEL_CONFIG.md §0 (with source attribution)
+    │
+    ▼
 User request received
-        │
-        ▼
+    │
+    ▼
 Is the task about "what to build" or "how to fix"?
-   ├── YES → Route to 🧠 Reasoning Model (user-provided or auto-detected)
+   ├── YES → Route to 🧠 Reasoning Model (user-provided)
    │         └─ Analyze requirements, identify edge cases, design solution
    │
    └── NO → Is the task about "write code" or "generate files"?
-              ├── YES → Route to ⚡ Generation Model (user-provided or auto-detected)
+              ├── YES → Route to ⚡ Generation Model (user-provided)
               │         └─ Generate complete, compilable code files
               │
               └── UNKNOWN → Ask user to clarify task type
 ```
 
 > **TRAE's role:** TRAE itself does NOT execute code. TRAE's job is to:
-> 1. Run interactive dialog first (ask user about their model setup) — NOT probe blindly
-> 2. If user skipped, fall back to auto-detection (sysctl + curl probes)
+> 1. Auto-detect first (sysctl + curl probes) — then present results for user to confirm/correct
+> 2. Collect user's model names (🧠/⚡) via interactive dialog — model names are always user-provided
 > 3. Classify the user's request into 🧠 Reasoning or ⚡ Generation role
-> 4. Look up the user's mapped model from `MODEL_CONFIG.md §0` (source: [用户确认] or [自动探测])
+> 4. Look up the user's mapped model from `MODEL_CONFIG.md §0` (source: [用户确认])
 > 5. Tell the user: "[Task] → 请使用 [User's Model Name] (🧠 Reasoning / ⚡ Generation)"
 
 ### Example: Full-Stack Feature Implementation (Model-Agnostic)
@@ -976,13 +1063,14 @@ Based on `scope` field in PROJECT_CONTEXT.md:
 
 | Field | Value |
 |-------|-------|
-| **Current version** | 1.5 |
+| **Current version** | 1.6 |
 | **Created** | 2026-06-27 |
 | **Last updated** | 2026-06-29 |
+| **New in 1.6** | **架构重构：TRAE 先检测，用户再确认** — 交互式对话不再是"填空"而是"确认"：TRAE 先自动检测物理内存和模型服务状态（sysctl + curl），展示结果让用户确认/纠正，用户只需提供模型名（🧠/⚡）；检测环节提升为全局前置步骤，所有模式（Full/Small/MVP）统一先检测目录状态再决定行为；Full 模式在已有代码目录中自动降级为 Merge 模式以避免覆盖用户源码 |
 | **New in 1.5** | Interactive model dialog: TRAE asks user about their local model setup (memory, services, model names, ports) before any auto-detection; user fills in dialog box and confirms — no blind curl probing needed; fallback to auto-detection only if user skips fields; custom port support for both Reasoning and Generation models; source attribution in MODEL_CONFIG.md §0 (`[用户确认]` vs `[自动探测]`) |
 | **New in 1.4** | True environment agnosticism: 5-tier continuous memory coverage (T1–T5 eliminates blind spots), start-of-session auto-detect (memory + model services → writable to MODEL_CONFIG.md §0), model-agnostic routing (Reasoning vs Generation roles, not hardcoded model names), templatized Contract Green Pass (variable placeholders resolved by project type), pure single-layer project handling (auto-skip cross-module logic), works with any model ecosystem (oMLX/Ollama/LM Studio/cloud-only) |
 | **New in 1.3** | Full-stack OOM prevention: hardware-adaptive sensing, static physical blacklist, Contract Green Pass, device-adaptive circuit breaker thresholds |
 | **New in 1.2** | Existing project detection & merge strategy (no overwrites), non-Apple project adaptation (Web/Backend/Game/etc.), project type auto-detection from existing files |
 | **New in 1.1** | Context lifecycle layering, periodic maintenance checklists, model switching decision tree, long-term memory decay strategy, project health dashboard, conversation strategy, decision log management, daily checklist, SUPPLEMENTARY/ chapters, ARCHIVE/ mechanism |
 | **Applicable scenario** | All software project types (Apple App, Web, Backend, CLI, Game, etc.) |
-| **Local model service** | Model-agnostic (oMLX / Ollama / LM Studio / cloud-only) with interactive user dialog |
+| **Local model service** | Model-agnostic (oMLX / Ollama / LM Studio / cloud-only) with interactive user dialog (TRAE detects first, user confirms) |

@@ -33,6 +33,30 @@ All notable changes to ai-collab-workflow will be documented in this file.
 
 ---
 
+## [1.6] — 2026-06-29
+
+### Added
+- **架构重构 — TRAE 先检测，用户再确认**：交互式对话不再是"填空"而是"确认"
+  - TRAE step 0a：`sysctl -n hw.memsize` 自动检测物理内存
+  - TRAE step 0b：三个 `curl` 探测 oMLX/Ollama/LM Studio 默认端口（8080/11434/1234）及运行模型列表
+  - 对话框展示自动检测结果，用户只需确认或纠正，无需猜测系统参数
+- **模型名始终由用户提供**：TRAE 检测服务但不自动映射角色——在对话框中用户告诉 TRAE 用哪个模型做推理(🧠)和生成(⚡)
+- **全局前置检测覆盖所有模式**：Full / Small / MVP 模式均先执行目录状态检测
+  - 目录为空 → 正常初始化
+  - 目录已有源码 → **自动降级为 Merge 模式**，提示"您说这是新项目，但目录中已有源码文件"以避免覆盖用户代码
+
+### Changed
+- Merge Mode 重构为双阶段检测：Step 0a (目录) → Step 0b (模型对话) → Step 1-6 (文件操作)
+- 对话框设计与 v1.5 翻转：先检测再确认，而非先问再补
+- MODEL_CONFIG.md §0 来源标注规则更新：物理内存默认 `[自动检测]`，模型名默认 `[用户确认]`
+- Pre-Task Checklist 步骤 1-2 重构：先检测(sysctl+curl)，再对话(确认+收集模型名)
+- Model Routing Decision Flow 更新为 v1.6：增加两个探测步骤 (step 0a/0b)
+
+### Fixed
+- Full 模式在已有代码目录中盲覆盖用户源码的漏洞（现已自动降级为 Merge）
+
+---
+
 ## [1.5] — 2026-06-29
 
 ### Added
