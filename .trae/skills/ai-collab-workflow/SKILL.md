@@ -8,7 +8,7 @@ description: Initialize any project (Apple App / Web / Backend / Game) with a st
 > A structured documentation framework for human + AI collaborative development using TRAE.
 > Supports Apple App, Web, Backend, Game, and any software project type.
 > Designed for both human developers and TRAE Agent.
-> **Version:** 1.6 | **Last Updated:** 2026-06-29
+> **Version:** 1.7 | **Last Updated:** 2026-06-29
 
 ---
 
@@ -70,12 +70,16 @@ Project/
    - If directory is empty → proceed as normal Full mode (Step 1 below)
    - **If directory has existing code → downgrade to Merge Mode** (skip Steps 1-6 below, go to §Merge)
      - Explain to user: "您说这是新项目，但目录中已有源码文件。为避免覆盖您的代码，我将以 Merge 模式处理。"
-1. Generate complete directory structure
-2. Initialize all core files (AGENTS.md, PROJECT_CONTEXT.md, MODEL_CONFIG.md, REFERENCES.md, TEMPLATE_GUIDE.md, STRUCTURE.md)
-3. Initialize all module placeholders (PRD/, ARCHITECTURE/, TESTING/, DEPLOYMENT/, DEVLOG/, CONTINUE/)
-4. Initialize all SUPPLEMENTARY/ chapters (S01-S07)
-5. Create CONTINUE/decision-log/ template
-6. Record source documents in REFERENCES.md (if any)
+1. **Run Interactive Model Dialog** (Start-of-Session Interactive Model Dialog, defined in § below)
+   - TRAE auto-detects: `sysctl -n hw.memsize` + curl probes on 8080/11434/1234
+   - Presents results in dialog for user to confirm or correct (model names 🧠/⚡ remain required)
+   - Waits for user response before proceeding
+2. Generate complete directory structure
+3. Initialize all core files (AGENTS.md, PROJECT_CONTEXT.md, MODEL_CONFIG.md, REFERENCES.md, TEMPLATE_GUIDE.md, STRUCTURE.md)
+4. Initialize all module placeholders (PRD/, ARCHITECTURE/, TESTING/, DEPLOYMENT/, DEVLOG/, CONTINUE/)
+5. Initialize all SUPPLEMENTARY/ chapters (S01-S07)
+6. Create CONTINUE/decision-log/ template
+7. Record source documents in REFERENCES.md (if any)
 
 ### 2. Small Tool Project
 
@@ -86,9 +90,13 @@ Project/
    - If directory is empty → proceed as normal Small mode (Step 1 below)
    - **If directory has existing code → downgrade to Merge Mode** (skip Steps 1-3 below, go to §Merge)
      - Explain to user: "您说这是小型项目，但目录中已有源码文件。为避免覆盖您的代码，我将以 Merge 模式处理。"
-1. Generate core files + selected module placeholders
-2. Skip TESTING/, DEPLOYMENT/
-3. Mark `scope` as `"small"` in PROJECT_CONTEXT.md
+1. **Run Interactive Model Dialog** (Start-of-Session Interactive Model Dialog, defined in § below)
+   - TRAE auto-detects: `sysctl -n hw.memsize` + curl probes on 8080/11434/1234
+   - Presents results in dialog for user to confirm or correct (model names 🧠/⚡ remain required)
+   - Waits for user response before proceeding
+2. Generate core files + selected module placeholders
+3. Skip TESTING/, DEPLOYMENT/
+4. Mark `scope` as `"small"` in PROJECT_CONTEXT.md
 
 ### 3. MVP (Minimum Viable Product)
 
@@ -99,8 +107,12 @@ Project/
    - If directory is empty → proceed as normal MVP mode (Step 1 below)
    - **If directory has existing code → downgrade to Merge Mode** (skip Steps 1-2 below, go to §Merge)
      - Explain to user: "您说这是原型验证，但目录中已有源码文件。为避免覆盖您的代码，我将以 Merge 模式处理。"
-1. Generate core files + only the corresponding PRD placeholder
-2. Skip all other modules, mark `scope` as `"mvp"`
+1. **Run Interactive Model Dialog** (Start-of-Session Interactive Model Dialog, defined in § below)
+   - TRAE auto-detects: `sysctl -n hw.memsize` + curl probes on 8080/11434/1234
+   - Presents results in dialog for user to confirm or correct (model names 🧠/⚡ remain required)
+   - Waits for user response before proceeding
+2. Generate core files + only the corresponding PRD placeholder
+3. Skip all other modules, mark `scope` as `"mvp"`
 
 ---
 
@@ -426,7 +438,7 @@ To ensure consistency between frontend and backend data contracts, a **"Contract
 
 **When token budget is exceeded:** TRAE MUST proactively stop the retrieval chain and ask the user for precise file paths.
 
-### Pre-Task Memory Checklist (v1.6 — Updated)
+### Pre-Task Memory Checklist (v1.7 — Updated)
 
 Before starting ANY task, TRAE MUST:
 1. **Run auto-detection first** — detect physical memory (`sysctl`) + probe model services (`curl` 8080/11434/1234)
@@ -526,7 +538,7 @@ This information is written to `MODEL_CONFIG.md §0` with source attribution: `[
 | **单元测试 / 测试用例** | ⚡ Generation | 模式化程度高，适合快速生成 |
 | **文档撰写 / PRD** | 🧠 Reasoning | 需要逻辑性和完整性 |
 
-### Model Routing Decision Flow (v1.6 — Updated)
+### Model Routing Decision Flow (v1.7 — Updated)
 
 ```
 Session start

@@ -55,6 +55,15 @@ All notable changes to ai-collab-workflow will be documented in this file.
 ### Fixed
 - Full 模式在已有代码目录中盲覆盖用户源码的漏洞（现已自动降级为 Merge）
 
+## [1.7] — 2026-06-29
+
+### Fixed
+- **Full / Small / MVP 模式补充交互式模型对话**：修复 v1.6 中从 0 开始的新项目跳过模型对话的 bug
+  - Full 模式：Step 0 (全局前置检测) → **Step 1 (交互式模型对话)** → Step 2-7 (生成文件)
+  - Small 模式：Step 0 (全局前置检测) → **Step 1 (交互式模型对话)** → Step 2-4 (生成文件)
+  - MVP 模式：Step 0 (全局前置检测) → **Step 1 (交互式模型对话)** → Step 2-3 (生成文件)
+  - 所有模式现在统一：先对话确认模型信息，再执行文件生成
+
 ---
 
 ## [1.5] — 2026-06-29
