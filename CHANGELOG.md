@@ -4,6 +4,50 @@ All notable changes to ai-collab-workflow will be documented in this file.
 
 ---
 
+## [1.4] — 2026-06-29
+
+### Added
+- **五档连续内存覆盖** (T1–T5)：消除旧版三档盲区，覆盖 ≤16GB 到 ≥65GB 全部内存配置
+  - T1 (≤16GB)：16K tokens，极限保守，仅读用户指定文件
+  - T2 (17–32GB)：24K tokens，契约绿通限单文件
+  - T3 (33–48GB)：50K tokens，标准平衡
+  - T4 (49–64GB)：80K tokens，充裕模式
+  - T5 (≥65GB)：100K+ tokens，无限制
+- **启动环境自检流程**：Agent 首次进入项目自动执行
+  - `sysctl -n hw.memsize` 检测物理内存 → 匹配策略档位
+  - 三重 `curl` 探测可用模型服务（oMLX / Ollama / LM Studio）
+  - 结果自动写入 `MODEL_CONFIG.md §0 环境自检结果 & 模型角色映射`
+- **模型无关分工策略**：不再硬编码 Gemma/Qwen，改为角色分类
+  - 🧠 推理型（Reasoning）：需求分析、架构设计、重构、Debug、文档撰写
+  - ⚡ 生成型（Generation）：全量代码编写、文件生成、测试用例
+  - 用户在 MODEL_CONFIG.md 中填写自己的模型名即可，无需修改 Skill
+- **契约绿通模板化**：文件路径改为变量占位（$SCHEMA_FILE, $ROUTE_DEFS, $DESIGN_TOKENS, $PRD_DIR, $API_CONTRACTS）
+  - 初始化时根据项目技术栈自动解析实际路径
+  - 纯单层项目自动跳过契约绿通（$cross_module = none）
+
+### Changed
+- MODEL_CONFIG.md 新增 `§0 环境自检结果 & 模型角色映射`（自动填充 + 用户确认）
+- 模型分工决策树更新为模型无关版本（Role-based 而非 Model-based）
+- 任务前检查清单从 5 步扩展为 7 步（新增模型服务检测 + 契约路径解析）
+- 本地模型服务声明改为 Model-agnostic（oMLX / Ollama / LM Studio / cloud-only）
+
+---
+
+## [1.3] — 2026-06-29
+
+### Added
+- **硬件自适应 OOM 防护**：启动时 `sysctl -n hw.memsize` 检测物理内存，自动选择策略档位
+- **静态物理黑名单**：全局禁止递归扫描 `presets/`、`node_modules/`、`.github/`、构建产物
+- **跨端数据契约绿通**：前后端联调时允许读取契约文件（schema.prisma / DesignToken.swift），但禁止扫描业务逻辑层
+- **设备自适应断路阈值**：≤32GB: 24K / 48GB: 50K / ≥64GB: 80K tokens
+- **任务前内存检查清单**：5 步流程确保每次任务前记忆安全
+
+### Changed
+- 模块架构章节新增跨模块通信规则（API contract first 流程）
+- AGENTS.md 新增 `§0 全局物理硬件与内存红线` 章节（中文本地化）
+
+---
+
 ## [1.2] — 2026-06-28
 
 ### Added

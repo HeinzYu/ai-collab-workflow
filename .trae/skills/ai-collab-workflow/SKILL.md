@@ -8,7 +8,7 @@ description: Initialize any project (Apple App / Web / Backend / Game) with a st
 > A structured documentation framework for human + AI collaborative development using TRAE.
 > Supports Apple App, Web, Backend, Game, and any software project type.
 > Designed for both human developers and TRAE Agent.
-> **Version:** 1.2 | **Last Updated:** 2026-06-28
+> **Version:** 1.4 | **Last Updated:** 2026-06-29
 
 ---
 
@@ -188,6 +188,297 @@ TRAE output:
 
 准备好了。需要我先展开哪个模块的详细文档？
 ```
+
+---
+
+---
+
+## ⚠️ 全局物理硬件与内存红线 (Device-Adaptive OOM Prevention)
+
+**This section defines the global hardware-aware memory management rules for all full-stack projects.**
+**TRAE MUST follow these rules before executing ANY task that involves file reading or context loading.**
+
+### Hardware-Adaptive Sensing (硬件自适应感知 — CRITICAL)
+
+This project may use a local dual-model workflow that is **extremely sensitive to physical RAM**.
+
+**On first run, TRAE MUST auto-detect the host machine's physical unified memory:**
+
+```bash
+sysctl -n hw.memsize | awk '{printf "%.0f\n", $1/1024/1024/1024}'
+```
+
+Based on the detected memory, TRAE selects the appropriate strategy tier below. The five-tier system covers ALL possible memory sizes — no gaps, no blind spots.
+
+### Start-of-Session Environment Self-Check (启动环境自检)
+
+Before starting any development work on a project, TRAE MUST:
+
+1. **Detect physical memory** via `sysctl -n hw.memsize` (cache for session)
+2. **Detect available AI models** — check which models are currently running or configured:
+   ```bash
+   # Check for oMLX service
+   curl -s http://localhost:8080/v1/models 2>/dev/null || echo "no local service"
+
+   # Check for Ollama service
+   curl -s http://localhost:11434/api/tags 2>/dev/null || echo "no ollama service"
+
+   # Check for LM Studio service
+   curl -s http://localhost:1234/v1/models 2>/dev/null || echo "no lmstudio service"
+   ```
+3. **Write self-check results** into `MODEL_CONFIG.md` under a new `## 0. 环境自检结果` section:
+   ```markdown
+   ## 0. 环境自检结果
+
+   - **自检时间：** [auto-generated timestamp]
+   - **物理内存：** [detected] GB
+   - **策略档位：** [Tier 1/2/3/4/5 — from table below]
+   - **可用模型服务：** [oMLX / Ollama / LM Studio / none — auto-detected]
+   - **可用模型列表：** [model names from API response]
+   ```
+4. **If no local model service is detected:** Skip the model routing strategy entirely; route all tasks through the current cloud Agent (Claude/GPT/TRAE). DO NOT block or ask the user to install a local model.
+
+### Static Physical Blacklist (静态物理黑名单 — 绝对死线)
+
+**On ALL devices, regardless of memory tier, these directories are STRICTLY FORBIDDEN from recursive scanning:**
+
+| Blacklisted Directory | Reason |
+|----------------------|--------|
+| `presets/` | Contains pre-built templates and large assets; scan only when user explicitly attaches a specific preset file |
+| `node_modules/` | Massive dependency tree; never load into context |
+| `.github/` | CI/workflow configs; irrelevant to feature development |
+| Build artifacts (`DerivedData/`, `.build/`, `dist/`, `.next/`) | Generated binaries; never read |
+
+**TRAE must NEVER blindly `ls` or `glob` these directories.** If a file inside them is needed, the user must provide the exact path.
+
+### Contract Green Pass (跨端数据契约绿通 — Templatized)
+
+To ensure consistency between frontend and backend data contracts, a **"Contract Green Pass"** mechanism is established. The file paths below are **templates** — TRAE MUST resolve the actual paths based on the project's detected tech stack during initialization.
+
+**Contract File Variables (resolved at project init):**
+
+| Variable | Apple App Project | Web Frontend Project | Backend API Project |
+|----------|------------------|---------------------|-------------------|
+| `$SCHEMA_FILE` | `prisma/schema.prisma` | `prisma/schema.prisma` or `drizzle/schema.ts` | `prisma/schema.prisma` or `drizzle/schema.ts` |
+| `$ROUTE_DEFS` | `api/routes/` | `api/routes/` or `app/api/` | `api/routes/` or `src/routes/` |
+| `$DESIGN_TOKENS` | `Sources/AppComponents/DesignToken.swift` | `src/styles/tokens.ts` or `tailwind.config.ts` | N/A (no design tokens for pure backend) |
+| `$PRD_DIR` | `PRD/` | `PRD/` | `PRD/` |
+| `$API_CONTRACTS` | `api/contracts/` | `api/contracts/` or `src/types/api.ts` | `api/contracts/` or `src/types/` |
+
+**When executing Frontend tasks:**
+- ✅ **ALLOWED:** Read `$SCHEMA_FILE` and `$ROUTE_DEFS` to ensure Model fields align with the backend contract.
+- ❌ **STILL FORBIDDEN:** Scanning backend business logic controllers, services, or middleware.
+
+**When executing Backend tasks:**
+- ✅ **ALLOWED:** Read `$PRD_DIR` documents, design specifications, and `$DESIGN_TOKENS` (if applicable) to ensure API responses match frontend UI expectations.
+- ❌ **STILL FORBIDDEN:** Scanning frontend UI view code or interaction logic.
+
+**For pure single-layer projects (no full-stack):** The Contract Green Pass is automatically skipped. TRAE detects this during init and marks `$cross_module` as `none` in MODEL_CONFIG.md.
+
+### Circuit Breaker Isolation Thresholds (断路隔离阈值 — Five-Tier Continuous Coverage)
+
+| Tier | Device Memory | Strategy | Token Budget | Contract Green Pass Behavior |
+|------|--------------|----------|-------------|------------------------------|
+| **T1** | **≤ 16 GB** | 极限保守 | **16K tokens** | ❌ Contract Green Pass disabled. Zero cross-module reads. Read only the exact file requested. |
+| **T2** | **17–32 GB** | 极致保守 | **24K tokens** | ⚠️ Contract Green Pass limited to reading a single `$SCHEMA_FILE` only. No other cross-module reads. |
+| **T3** | **33–48 GB** | 标准平衡 | **50K tokens** | ✅ Contract Green Pass fully active: AI may auto-associate and read frontend-backend contract files as needed. |
+| **T4** | **49–64 GB** | 充裕 | **80K tokens** | ✅ Contract Green Pass fully active + reasonable cross-module global scanning allowed. |
+| **T5** | **≥ 65 GB** | 无限制 | **100K+ tokens** | ✅ No token restriction. Full cross-module access. Still respect static blacklist. |
+
+**When token budget is exceeded:** TRAE MUST proactively stop the retrieval chain and ask the user for precise file paths.
+
+### Pre-Task Memory Checklist
+
+Before starting ANY task, TRAE MUST:
+1. **Detect physical memory** via `sysctl -n hw.memsize` (first run only; cache for session)
+2. **Detect available model services** (oMLX / Ollama / LM Studio / none)
+3. **Identify the task layer** (Frontend / Backend / Database / Cross-module)
+4. **Match the tier** from the five-tier table above based on detected memory
+5. **Resolve contract file paths** from project tech stack → fill in variable placeholders
+6. **Respect the static blacklist** — never scan `presets/`, `node_modules/`, or build artifacts
+7. **Use Contract Green Pass** only for contract alignment — never for business logic exploration
+
+> **Why this matters:** The five-tier system eliminates blind spots — every memory configuration from 8GB laptops to 192GB workstations gets its own optimal rules. Users never need to configure anything; TRAE detects the environment and adapts automatically. **Always prefer file-path-specific reads over broad directory scans.**
+
+---
+
+## 📂 Full-Stack Module Architecture & Tech Stack Mapping
+
+### Default Full-Stack Project Structure
+
+When initializing a full-stack project (iOS + Backend + Database), TRAE MUST create the following module mapping:
+
+```
+Project/
+├── Sources/AppComponents/       iOS 原生客户端 (SwiftUI + TCA)
+│   ├── Models/                  数据模型层
+│   ├── Views/                   UI 视图层
+│   ├── ViewModels/              视图模型层 (TCA reducers)
+│   └── Services/                网络与服务层
+├── api/                         后端 API 服务 (Node.js / TypeScript)
+│   ├── routes/                  异步路由控制器
+│   ├── controllers/             业务逻辑层
+│   └── middleware/              中间件 (auth, validation)
+├── prisma/                      数据库层 (Prisma ORM / PostgreSQL)
+│   ├── schema.prisma            数据模型定义
+│   └── migrations/              渐进式迁移文件
+└── [其他前端模块...]            Web / Desktop / Game etc.
+```
+
+### Per-Module Tech Stack & Standards
+
+| Module | Tech Stack | Key Specifications |
+|--------|------------|-------------------|
+| **iOS 原生客户端** (Sources/AppComponents/) | iOS 16+ / SwiftUI / TCA | 严格对齐 Apple HIG；动效 `Animation.spring(damping: 0.7, duration: 0.3s)`；触觉 `UIImpactFeedbackGenerator`；图片 `Nuke` |
+| **后端 API 服务** (api/) | Node.js / TypeScript / Express/Fastify | 必须包含完善的错误捕获（Try-Catch），返回标准 JSON 格式响应 |
+| **数据库层** (prisma/) | Prisma ORM / PostgreSQL | 变更字段必须遵循渐进式迁移（Migration），禁止直接破坏现有表结构 |
+| **Web 前端** (app/ / src/) | React / Next.js / Vue + TypeScript | 组件化开发，遵循既定设计系统 Token |
+
+### Full-Stack Cross-Module Communication Rules
+
+When a task spans multiple modules (e.g., "implement login feature across iOS + Backend"):
+
+1. **Define API contract first** — document request/response schema in `api/contracts/<feature>.md`
+2. **Generate backend routes** — implement controllers and database queries
+3. **Generate frontend integration** — implement network layer and UI updates
+4. **Update both module summaries** in `CONTINUE/` after completion
+
+---
+
+## 🤖 Intelligent Model Routing Strategy (Model-Agnostic Division of Labor)
+
+This section defines a **model-agnostic** routing strategy. It does NOT assume specific model names (Gemma, Qwen, etc.). Instead, all models are classified into two **role-based categories** that apply to any AI model ecosystem.
+
+### Two Role-Based Model Categories
+
+| Category | Role | Key Trait | Examples (Any Model) |
+|----------|------|-----------|----------------------|
+| **🧠 Reasoning Model** (推理型) | Analyze, design, review, debug | Deep chain-of-thought, strong logic | Claude, Gemma, DeepSeek-R1, o1, o3, Llama-4 (thinking) |
+| **⚡ Generation Model** (生成型) | Write code, generate files, expand PRDs | High throughput, fast output | GPT-4o, Qwen, Codex, Llama-4, Mistral, DeepSeek-V3 |
+
+### User Model Mapping (Auto-Filled from Environment Self-Check)
+
+During start-of-session self-check, TRAE detects available models and populates this mapping in `MODEL_CONFIG.md §0`:
+
+```markdown
+## 0. 环境自检结果 & 模型角色映射
+
+| 角色 | 用户指定模型名 | 来源 |
+|------|-------------|------|
+| 🧠 Reasoning | `[auto-detected or user-filled]` | [oMLX / Ollama / LM Studio / cloud] |
+| ⚡ Generation | `[auto-detected or user-filled]` | [oMLX / Ollama / LM Studio / cloud] |
+```
+
+**If the user hasn't configured model names:** TRAE uses the currently active cloud Agent for both roles. The routing logic still applies (which task goes to which role), even if both roles are served by the same model.
+
+### Task Classification & Role Assignment
+
+| Task Type | Role | Reason |
+|-----------|------|--------|
+| **需求分析 / 设计 / 重构 / Debug** | 🧠 Reasoning | 需要深层思维链处理复杂业务边界、HIG 核对、并发死锁、类型报错及架构设计 |
+| **全量代码编写 / 扩写 / 生成** | ⚡ Generation | 高吞吐优势，根据既定 PRD 和设计 Token，快速产出全量、闭合的代码文件 |
+| **架构决策 / 技术选型** | 🧠 Reasoning | 需要深度推理和多方案对比 |
+| **单元测试 / 测试用例** | ⚡ Generation | 模式化程度高，适合快速生成 |
+| **文档撰写 / PRD** | 🧠 Reasoning | 需要逻辑性和完整性 |
+
+### Model Routing Decision Flow
+
+```
+Session start → Run Environment Self-Check
+        │
+        ▼
+Detected models → Write to MODEL_CONFIG.md §0
+        │
+        ▼
+User request received
+        │
+        ▼
+Is the task about "what to build" or "how to fix"?
+   ├── YES → Route to 🧠 Reasoning Model
+   │         └─ Analyze requirements, identify edge cases, design solution
+   │
+   └── NO → Is the task about "write code" or "generate files"?
+              ├── YES → Route to ⚡ Generation Model
+              │         └─ Generate complete, compilable code files
+              │
+              └── UNKNOWN → Ask user to clarify task type
+```
+
+> **TRAE's role:** TRAE itself does NOT execute code. TRAE's job is to:
+> 1. Run environment self-check to detect available models (if not yet cached)
+> 2. Classify the user's request into 🧠 Reasoning or ⚡ Generation role
+> 3. Look up the user's mapped model from `MODEL_CONFIG.md §0`
+> 4. Tell the user: "[Task] → 请使用 [User's Model Name] (🧠 Reasoning / ⚡ Generation)"
+
+### Example: Full-Stack Feature Implementation (Model-Agnostic)
+
+User says: "实现用户登录功能，包含 iOS 客户端和后端 API"
+
+TRAE response:
+```
+检测到这是一个跨模块功能开发。根据你的 MODEL_CONFIG.md 配置，当前模型映射为：
+- 🧠 Reasoning: [user's model]     ⚡ Generation: [user's model]
+
+建议按以下步骤执行：
+
+Step 1 — 需求分析与 API 契约设计
+→ 请使用 [user's reasoning model] (🧠 Reasoning)
+→ 任务：定义登录接口的请求/响应格式、错误码、边界条件
+
+Step 2 — 后端 API 实现
+→ 请使用 [user's generation model] (⚡ Generation)
+→ 任务：根据 Step 1 的契约，实现路由、控制器、数据库查询
+
+Step 3 — iOS 客户端集成
+→ 请使用 [user's generation model] (⚡ Generation)
+→ 任务：实现网络层调用和 UI 更新
+
+Step 4 — 联调与 Debug
+→ 请使用 [user's reasoning model] (🧠 Reasoning)
+→ 任务：处理异常场景、边界条件、错误恢复
+
+请问是否按此计划执行？
+```
+
+---
+
+## 📝 Code Delivery Standards (Output Quality Rules)
+
+These standards apply to ALL AI-generated code, regardless of model or project type.
+
+### 1. No Pseudo-Code Allowed (严禁偷懒)
+
+- **MUST output structurally complete, directly compilable/runnable code.**
+- **NEVER use** `// ... keep original`, ellipsis (`...`), or placeholder comments to truncate code.
+- **NEVER skip** imports, error handling, edge cases, or type definitions.
+- If a file is too large to output in one response, TRAE MUST split it into logical chunks and clearly mark the continuation points.
+
+### 2. Complete File Output (完整文件输出)
+
+When generating or modifying a file, TRAE MUST output the **entire file content**, not just the changed portion. This ensures:
+- The recipient can compile/run immediately without merging
+- No risk of missing context from the original file
+- Clear diff for version control
+
+### 3. Documentation Persistence (文档沉淀)
+
+Product design outputs at each stage (e.g., error messages, interaction flows) MUST be persisted locally to the `交互流程/` directory (or equivalent).
+
+| Output Type | Target Directory |
+|-------------|------------------|
+| Error messages & copy | `PRD/error-messages/` |
+| Interaction flows | `交互流程/` or `DESIGN/interactions/` |
+| API contracts | `api/contracts/` |
+| Design tokens / UI specs | `DESIGN/tokens/` or `ASSETS/design-system/` |
+
+### 4. Self-Verification Before Delivery
+
+Before delivering code, TRAE MUST mentally verify:
+- [ ] Does it compile / run without errors?
+- [ ] Are all imports and dependencies included?
+- [ ] Is error handling complete (try-catch, validation)?
+- [ ] Are edge cases covered (empty input, network failure, invalid data)?
+- [ ] Does it follow the project's existing conventions (naming, structure, patterns)?
 
 ---
 
@@ -617,10 +908,12 @@ Based on `scope` field in PROJECT_CONTEXT.md:
 
 | Field | Value |
 |-------|-------|
-| **Current version** | 1.2 |
+| **Current version** | 1.4 |
 | **Created** | 2026-06-27 |
-| **Last updated** | 2026-06-28 |
+| **Last updated** | 2026-06-29 |
+| **New in 1.4** | True environment agnosticism: 5-tier continuous memory coverage (T1–T5 eliminates blind spots), start-of-session auto-detect (memory + model services → writable to MODEL_CONFIG.md §0), model-agnostic routing (Reasoning vs Generation roles, not hardcoded model names), templatized Contract Green Pass (variable placeholders resolved by project type), pure single-layer project handling (auto-skip cross-module logic), works with any model ecosystem (oMLX/Ollama/LM Studio/cloud-only) |
+| **New in 1.3** | Full-stack OOM prevention: hardware-adaptive sensing, static physical blacklist, Contract Green Pass, device-adaptive circuit breaker thresholds |
 | **New in 1.2** | Existing project detection & merge strategy (no overwrites), non-Apple project adaptation (Web/Backend/Game/etc.), project type auto-detection from existing files |
 | **New in 1.1** | Context lifecycle layering, periodic maintenance checklists, model switching decision tree, long-term memory decay strategy, project health dashboard, conversation strategy, decision log management, daily checklist, SUPPLEMENTARY/ chapters, ARCHIVE/ mechanism |
 | **Applicable scenario** | All software project types (Apple App, Web, Backend, CLI, Game, etc.) |
-| **Local model service** | oMLX (Gemma + Qwen) |
+| **Local model service** | Model-agnostic (oMLX / Ollama / LM Studio / cloud-only) |

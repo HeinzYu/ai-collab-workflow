@@ -3,7 +3,7 @@
 > AI 协作开发的操作系统级工程规范 —— 让 AI Agent 在长期项目中始终保持对上下文的准确理解。  
 > *An OS-level engineering specification for AI-assisted development — keeping AI Agents context-aware across long-running projects.*
 
-[![Version](https://img.shields.io/badge/version-1.2-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -17,10 +17,11 @@
 
 - 🧠 **持久化的项目记忆** / *Persistent project memory* — 跨对话上下文不会丢失 / *context survives across sessions*
 - 📋 **结构化的开发流程** / *Structured dev pipeline* — PRD → Architecture → Development → Testing → Deployment
-- 🔄 **智能的上下文管理** / *Smart context management* — 五层 Context 生命周期，自动防止 Token 溢出 / *5-tier lifecycle prevents overflow*
+- 🖥️ **硬件自适应 OOM 防护** / *Device-adaptive OOM prevention* — 五档连续内存覆盖，启动自动检测物理 RAM / *5-tier coverage, auto-detect RAM*
+- 🔄 **智能的上下文管理** / *Smart context management* — 五层 Context 生命周期 + 静态黑名单 + 契约绿通
+- 🤖 **模型无关分工策略** / *Model-agnostic routing* — 🧠推理型 vs ⚡生成型角色分类，适配任意模型生态
 - 📝 **自动化的文档维护** / *Automated documentation* — DevLog, module summaries, decision logs
 - 🗓️ **周期性的健康检查** / *Periodic health checks* — 周/月/季度维护，防止"记忆衰减" / *weekly/monthly/quarterly maintenance*
-- 🔀 **模型切换策略** / *Model switching strategy* — 本地模型 vs 云端模型的智能决策树 / *local vs cloud decision tree*
 
 ---
 
@@ -100,14 +101,26 @@ Temporary  — Valid for 30 days
 Disposable — Cleaned up quarterly
 ```
 
-### 🔀 模型切换决策树 / Model Switching Decision Tree
+### 🖥️ 硬件自适应 OOM 防护 / Device-Adaptive OOM Prevention
 
-```
-Task arrives → Evaluate complexity → Select model
-  ├── Simple → Gemma (local, zero cost)
-  ├── Medium → Qwen (local, large context)
-  └── Complex → Claude/GPT (cloud, strong reasoning)
-```
+启动时自动检测物理内存，五档连续覆盖所有设备，智能控制 Token 预算和跨模块行为：
+
+| 档位 | 内存 | Token 上限 | 行为 |
+|------|------|-----------|------|
+| T1 | ≤16 GB | 16K | 仅读用户指定文件 |
+| T2 | 17–32 GB | 24K | 契约绿通限单文件 |
+| T3 | 33–48 GB | 50K | 契约绿通全开 |
+| T4 | 49–64 GB | 80K | 跨模块扫描 |
+| T5 | ≥65 GB | 100K+ | 无限制 |
+
+### 🤖 模型无关分工 / Model-Agnostic Routing
+
+不写死模型名，按角色分类，适配 oMLX / Ollama / LM Studio / 纯云端等任意生态：
+
+| 角色 | 职责 | 适用模型示例 |
+|------|------|------------|
+| 🧠 推理型 | 需求分析、架构设计、Debug | Claude, Gemma, DeepSeek-R1, o1 |
+| ⚡ 生成型 | 全量代码编写、文件生成 | GPT-4o, Qwen, Codex, Mistral |
 
 ### 📋 Prompt 工程标准 / Prompt Engineering Standard
 
@@ -142,7 +155,9 @@ Task arrives → Evaluate complexity → Select model
 |------|------|---------|
 | v1.0 | 2026-06-27 | Initial framework: core files + module placeholders + large file handling + model config |
 | v1.1 | 2026-06-28 | Context lifecycle tiers, periodic maintenance, model switching tree, memory decay strategy, health dashboard, conversation strategy, decision logs, daily checklist |
-| v1.2 | 2026-06-28 | SUPPLEMENTARY chapter system, Prompt engineering standard, TRAE best practices, long-term project strategy |
+| v1.2 | 2026-06-28 | Existing project merge (no overwrites), non-Apple adaptation, project type auto-detection |
+| v1.3 | 2026-06-29 | Hardware-adaptive OOM prevention, static blacklist, Contract Green Pass, circuit breaker thresholds |
+| v1.4 | 2026-06-29 | 5-tier memory coverage, environment auto-detect, model-agnostic routing, templatized contracts |
 
 详见 / *See* [CHANGELOG.md](CHANGELOG.md)
 
