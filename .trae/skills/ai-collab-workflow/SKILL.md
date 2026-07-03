@@ -8,7 +8,7 @@ description: Initialize any project (Apple App / Web / Backend / Game) with a st
 > A structured documentation framework for human + AI collaborative development using TRAE.
 > Supports Apple App, Web, Backend, Game, and any software project type.
 > Designed for both human developers and TRAE Agent.
-> **Version:** 1.8 | **Last Updated:** 2026-06-29
+> **Version:** 1.9.2 | **Last Updated:** 2026-07-02
 
 ---
 
@@ -183,6 +183,76 @@ After the dialog, write results into `MODEL_CONFIG.md` under a new section (see 
 | `PRD/*.md` | Skip if module already implemented |
 | `DEVLOG/` | Always safe to create (new log files only) |
 
+
+### Functional Equivalence Detection (功能等价物检测 — P0-3)
+
+**Problem:** The current Merge Mode only checks if a file exists, not whether an existing document serves the same function. This leads to redundant files when projects already have their own documentation体系.
+
+**Detection Rules:** TRAE MUST check for the following functional equivalence relationships BEFORE creating any standard files:
+
+| Standard File | Functional Equivalent (Project-Own) | Action When Detected |
+|---------------|-------------------------------------|----------------------|
+| `AGENTS.md` §3 (Task Routing) | `AI_CONTEXT_MAP.md` with 14 task classification types + line-level precision | Skip creating standard AGENTS.md §3; instead, create a reference in the new AGENTS.md pointing to `AI_CONTEXT_MAP.md` |
+| `PROJECT_CONTEXT.md` (Progress Section) | `AI_PROGRESS_MAP.md` with 23+ sub-module progress + verification status | Skip creating PROJECT_CONTEXT.md progress section; instead, create a reference in AGENTS.md pointing to `AI_PROGRESS_MAP.md` |
+| `ARCHITECTURE/` (Engineering Specs) | 技术文件框架/ (E2-E6 system contracts + development methods) | Skip creating ARCHITECTURE/ directory; instead, create a reference in AGENTS.md pointing to 技术文件框架/ |
+| `PRD/` (Feature Requirements) | 森林文档/ (PRD + Design Charter + World Bible) | Skip creating PRD/ directory; instead, create a reference in AGENTS.md pointing to 森林文档/ |
+| `.trae/rules/project_rules.md` | Content already integrated into AGENTS.md §2 (Token segmentation rules) | Keep `.trae/rules/project_rules.md` for TRAE system; note in AGENTS.md that content is integrated |
+
+**Priority Rule:** When a functional equivalent exists, the project-own document takes priority over the standard template. User can override this rule manually if needed.
+
+**Output Format When Equivalence Detected:**
+```markdown
+检测到功能等价文档，跳过标准文件创建：
+
+[已跳过] PROJECT_CONTEXT.md → 使用 AI_PROGRESS_MAP.md（功能等价：23+模块进度 + 验证状态）
+[已跳过] ARCHITECTURE/ → 使用 技术文件框架/（功能等价：E2-E6工程规格）
+[需新增] AGENTS.md — 包含对 AI_CONTEXT_MAP.md 和 AI_PROGRESS_MAP.md 的引用
+```
+
+---
+
+### Shell Mode (外壳模式 — P0-1)
+
+**Problem:** The current Merge Mode assumes the project will accept a complete directory structure (PRD/, ARCHITECTURE/, TESTING/). Real projects often have their own documentation system that serves the same purpose.
+
+**When to activate Shell Mode:**
+- User says "帮我给这个项目加上协同工作流" AND directory contains project-specific documentation (AI_CONTEXT_MAP.md, AI_PROGRESS_MAP.md, 技术文件框架/, 森林文档/, or equivalent)
+- After functional equivalence detection (P0-3) identifies ≥2 functionally equivalent documents
+
+**Shell Mode Workflow:**
+
+```
+Step 1 — Run functional equivalence detection (P0-3 rules above)
+Step 2 — Classify detected documents:
+         - "已跳过" (skipped): Standard file has functional equivalent → skip creation
+         - "需新增" (needs new): No equivalent exists → create standard file
+         - "保留" (keep): Project-own document is superior → keep as-is, add reference
+Step 3 — Generate merge plan showing:
+         - Which standard files are skipped (reason: functional equivalent)
+         - Which standard files need to be created (filling process-layer gaps)
+         - Which project-own documents are preserved with references added
+Step 4 — Present clear plan to user:
+         ```
+         Shell Mode 合并计划：
+
+         [已跳过] PRD/ → 使用 森林文档/（功能等价）
+         [已跳过] ARCHITECTURE/ → 使用 技术文件框架/（功能等价）
+         [已跳过] PROJECT_CONTEXT.md 进度部分 → 使用 AI_PROGRESS_MAP.md（功能等价）
+
+         [需新增] AGENTS.md — 包含对 AI_CONTEXT_MAP.md 的引用
+         [需新增] MODEL_CONFIG.md — 模型路由配置（无等价物）
+         [需新增] DEVLOG/ — 开发日志目录（无等价物）
+         [需新增] CONTINUE/ — 模块摘要目录（无等价物）
+
+         标准框架将作为"外壳"包裹项目自有文档。
+         请问是否按此计划执行？
+         ```
+
+**Key Principle:** Shell Mode respects the project's existing documentation system. The standard framework acts as a "shell" that adds process-layer capabilities (session management, maintenance checklists, memory decay strategy) without duplicating content-layer capabilities that the project already handles well.
+
+**Backward Compatibility:** Shell Mode is ONLY activated when functional equivalents are detected. If no equivalents exist, the workflow falls back to standard Merge Mode (existing behavior unchanged).
+
+---
 ---
 
 ## Non-Apple App Project Adaptation
@@ -200,12 +270,12 @@ This workflow was originally designed for Apple App (SwiftUI) projects but is **
 | `Cargo.toml` | **Rust Project** | Tech stack → "Rust + [framework]"; adjust docs |
 | `go.mod` | **Go Project** | Tech stack → "Go + [framework]"; adjust docs |
 | `Podfile` / `.xcworkspace` | **iOS (UIKit/SwiftUI)** | Keep Apple path |
-| Unity/Unreal project files | **Game Project** | Tech stack → "Unity/C# or Unreal/C++"; rename module structure to fit game dev |
+| `.cs` + `.unity` scenes / `.cpp` + `.uproject` | **Unity Game** | Tech stack → "Unity/C#"; **新增游戏专属 AGENTS.md 模板章节**: §G1 Tick vs Frame 驱动概念, §G2 确定性回放 (Deterministic Replay), §G3 头显/无头模式 (Headless Simulation), §G4 资产管道 (Asset Pipeline); 对话职责类型增加: SimCore Dev / Asset Gen / Shader Dev / LevelDesign; 目录结构模板: Assets/Scripts/, Assets/Audio/, Assets/Materials/ |
+| `.cpp` + `.uproject` | **Unreal Game** | Tech stack → "Unreal/C++"; 同上游戏专属章节 (C++ 版本); 目录结构: Source/, Content/, Plugins/ |
 
 ### Non-Apple adaptations checklist
 
 When the project is NOT an Apple App, TRAE MUST:
-
 1. **Rename DEPLOYMENT/app-store-guide.md** → `DEPLOYMENT/deploy-guide.md` (web/server deploy instead of App Store)
 2. **Update ARCHITECTURE/tech-stack.md** placeholder content to match detected tech stack
 3. **Adjust AGENTS.md trigger phrases** — change "Apple App" references to match the detected project type
@@ -214,6 +284,39 @@ When the project is NOT an Apple App, TRAE MUST:
    - "语言：Swift / SwiftUI" → detected language
    - "设计工具：Figma" → keep (universal)
 5. **Skip Apple-specific modules** if not applicable (e.g., no App Store for web projects)
+
+### Game Project Specific Sections (P1-1 — NEW in v1.9.2)
+
+When project type is detected as **Unity** or **Unreal**, TRAE MUST additionally:
+
+1. **AGENTS.md §G1-G4** — Create game-specific chapters:
+   - **§G1: Tick vs Frame 驱动概念** — Explain whether the game uses fixed-tick simulation (Unity FixedUpdate / Unreal Server Tick) or frame-rate-driven rendering. Define the relationship between simulation ticks and render frames, including interpolation requirements for smooth visuals.
+   - **§G2: 确定性回放 (Deterministic Replay)** — Define requirements for save-game format, replay system, and network synchronization. All simulation MUST be deterministic (seeded RNG, fixed-point math where applicable). Frame rate independence is mandatory for simulation code.
+   - **§G3: 头显/无头模式 (Headless Simulation)** — Define headless build configuration for CI/CD testing, server deployment mode, and benchmarking procedures. Headless mode MUST support all gameplay logic without rendering dependencies.
+   - **§G4: 资产管道 (Asset Pipeline)** — Define asset import workflow (models, textures, audio, animations), addressable assets system (Unity) or Streamable Assets (Unreal), memory management strategy, and asset bundling rules.
+
+2. **Conversation Strategy — Add Game-Specific Responsibility Types:**
+   When generating AGENTS.md for game projects, add the following rows to "Single Conversation Responsibility Types" table:
+
+   | Conversation Type | Core Responsibility | Should NOT Include |
+   |-------------------|---------------------|---------------------|
+   | **SimCore Dev** | Implement simulation core logic (Tick, ECS, UtilityAI) | UI/rendering changes |
+   | **Asset Gen** | Generate/import 3D models, textures, audio | Gameplay logic changes |
+   | **Shader Dev** | Write/modify Unity Shaders or Unreal Materials | Non-rendering code |
+   | **Level Design** | Scene layout, terrain, lighting, navmesh | Core gameplay systems |
+
+3. **Directory Structure Adaptations:**
+   - Standard project: `Assets/Scripts/`, `Assets/Audio/`, `Assets/Materials/`, `Assets/Scenes/` (Unity)
+   - Or: `Source/`, `Content/`, `Plugins/`, `Config/` (Unreal)
+   - `DEPLOYMENT/` → `BUILD/` (build pipeline instead of app store deployment)
+   - `PRD/` → Add Game Design Document (GDD) templates alongside feature PRDs
+   - `TESTING/` → Add PlayMode + EditMode test templates (Unity) or Automation Test templates (Unreal)
+
+4. **Game-Specific Hard Constraints** (auto-added when game type detected):
+   - HC-014: Simulation logic MUST NOT live in `MonoBehaviour` (Unity) or `AActor::Tick()` (Unreal). All simulation MUST be in dedicated service classes.
+   - HC-015: Deterministic replay requires seeded RNG — NO `System.Random()` without seed in simulation code.
+   - HC-016: Asset loading MUST use Addressables (Unity) or StreamableAssets (Unreal) — NO hardcoded paths in gameplay code.
+   - HC-017: Headless mode MUST pass all gameplay tests — no rendering-dependent logic in simulation path.
 
 ### Example: Web project initialization
 
@@ -453,7 +556,78 @@ To ensure consistency between frontend and backend data contracts, a **"Contract
 | **T4** | **49–64 GB** | 充裕 | **80K tokens** | ✅ Contract Green Pass fully active + reasonable cross-module global scanning allowed. |
 | **T5** | **≥ 65 GB** | 无限制 | **100K+ tokens** | ✅ No token restriction. Full cross-module access. Still respect static blacklist. |
 
+### Context Budget Guide (项目级精度 — P1-2)
+
+Based on project scale (full/small/mvp), TRAE MUST set appropriate context budget levels.
+This guide works in tandem with the T1-T5 circuit breaker thresholds above.
+
+| Budget Level | Token Range | Project Scale | Recommended Loaded Files |
+|-------------|-------------|---------------|--------------------------|
+| Small | 15–25 KB (≈4K–7K tokens) | MVP scope, single module | AGENTS.md + current module PRD only |
+| Medium | 30–50 KB (≈8K–14K tokens) | Small scope, 2-3 modules | AGENTS.md + PROJECT_CONTEXT.md (milestones) + current module PRD |
+| Large | 50–70 KB (≈14K–20K tokens) | Full scope, multi-module | AGENTS.md + PROJECT_CONTEXT.md (full) + MODEL_CONFIG.md + current module PRD + related CONTINUE/ summaries |
+
+**Task-Level Precision (任务级精度):** For each task type, TRAE MUST annotate the suggested file paths and line ranges:
+
+| Task Type | Suggested Load | Line Range | Budget Impact |
+|-----------|---------------|------------|---------------|
+| 需求分析 (Requirements) | AGENTS.md §1-3 + PRD/ | Lines 1–200 (AGENTS) + full PRD | Small-Medium |
+| 架构设计 (Architecture) | PROJECT_CONTEXT.md §2-3 + ARCHITECTURE/ | Lines 50–150 (PROJECT) + spec files | Medium-Large |
+| 代码生成 (Code Gen) | Current module PRD + existing source files | Line-level per file | Small-Large (depends on scope) |
+| Debug/调试 (Debugging) | Error logs + relevant source files only | Exact file:line from error | Small |
+| 跨模块审查 (Cross-Module Review) | Contract files only ($SCHEMA_FILE + $ROUTE_DEFS) | Lines 1–50 per contract file | Medium |
+| 项目审计 (Audit) | All ARCHIVE/ summaries + PROJECT_CONTEXT.md §4-5 | Full documents | Large |
+
+**Budget Adjustment Rules (预算调整规则):**
+- When project scale is `mvp`: always use Small budget, even if physical memory supports Large
+- When project scale is `full` AND T3+ tier: use Large budget
+- When project scale is `small` AND T3+ tier: use Medium budget
+- When project scale is `small` AND T1-T2 tier: use Small budget (circuit breaker takes precedence)
+- Shell Mode projects (≥2 functional equivalents skipped): default to Medium budget for remaining files
+
+
 **When token budget is exceeded:** TRAE MUST proactively stop the retrieval chain and ask the user for precise file paths.
+
+### Dynamic Permanent Layer Scheduling (P1-2 — 动态永久层调度, NEW in v1.9.2)
+
+When initializing or re-initializing a project, TRAE MUST execute the following scheduling algorithm to determine which files belong in the Permanent Layer based on hardware constraints:
+
+**Scheduling Algorithm (执行于初始化阶段):**
+
+```
+Step 1: Detect all project-owned core files (AI_CONTEXT_MAP.md, AI_PROGRESS_MAP.md, etc.)
+Step 2: Estimate each file's token consumption (file_size_KB × 1.5 safety factor)
+Step 3: Determine the Context Budget ceiling based on T1-T5 tier (see table below)
+Step 4: Fill Permanent Layer by priority (P0 > P1 > P2) until budget is exhausted
+Step 5: Files exceeding budget are automatically demoted to "Stable Layer" (on-demand loading only)
+Step 6: Document each file's priority and status (Permanent Layer / Stable Layer) in AGENTS.md §3
+```
+
+**T1-T5 Tier → Permanent Layer Budget Mapping:**
+
+| Tier | Physical RAM | Context Window | Permanent Layer Budget Cap | Strategy |
+|------|-------------|---------------|---------------------------|----------|
+| **T1** | ≤ 16 GB | 16K tokens | **≤8 KB (50%)** | Load ONLY P0 files (AGENTS.md + MODEL_CONFIG.md + [PROJECT_CONTEXT_FILE]). AI_PROGRESS_MAP.md auto-demoted to Stable Layer. |
+| **T2** | 17–32 GB | 24K tokens | **≤15 KB (60%)** | Load P0 + FIRST P1 file (e.g., AI_CONTEXT_MAP.md). Second and subsequent P1 files demoted to Stable Layer. |
+| **T3** | 33–48 GB | 32K tokens | **≤20 KB (60%)** | Load P0 + ALL P1 files (≤3). Excess P2 files demoted to Stable Layer. |
+| **T4** | 49–64 GB | 48K tokens | **≤30 KB (60%)** | Load P0 + ALL P1 files + partial P2 on-demand. |
+| **T5** | ≥ 65 GB | 64K+ tokens | **≤50 KB (75%)** | Full load. Remaining space can hold conversation history. |
+
+**Key Behaviors:**
+- **T1 users**: Permanent layer contains ONLY P0 files (AGENTS.md + MODEL_CONFIG.md + PROJECT_CONTEXT_FILE). AI_PROGRESS_MAP.md is auto-demoted to Stable Layer.
+- **T2 users**: Permanent layer contains P0 + first P1 file. Second and subsequent P1 files demoted to Stable Layer.
+- **T3+ users**: Can load all P0 + P1 files. P2 files demoted on-demand as needed.
+- **All tiers**: User-manually added files ALWAYS remain in Permanent Layer (not subject to budget limits).
+- **Budget recalculation**: If user adds new core documents, re-run scheduling algorithm on next initialization.
+
+**Tier-to-Budget Reference Table (for user display):**
+| Your Hardware Tier | Context Window | Permanent Layer Budget Cap | Estimated Files Loadable |
+|-------------------|---------------|---------------------------|-------------------------|
+| T1 (≤16GB) | 16K tokens | ≤8 KB | 2-3 files (P0 only) |
+| T2 (17-32GB) | 24K tokens | ≤15 KB | 3-4 files (P0 + partial P1) |
+| T3 (33-48GB) | 32K tokens | ≤20 KB | 4-5 files (P0 + all P1) |
+| T4 (49-64GB) | 48K tokens | ≤30 KB | 5-7 files (P0 + P1 + partial P2) |
+| T5 (≥65GB) | 64K+ tokens | ≤50 KB | 7+ files (full load) |
 
 ### Pre-Task Memory Checklist (v1.8 — Updated)
 
@@ -690,6 +864,109 @@ Before delivering code, TRAE MUST mentally verify:
 
 ---
 
+## 🚫 Project-Level Hard Constraints (项目级硬约束)
+
+**Purpose:** Define non-negotiable rules that ALL AI-generated code MUST obey. Violating any hard constraint is a critical error, regardless of other quality metrics.
+
+**When to use:** Every project MUST have at least one hard constraint. TRAE auto-recommends constraints based on detected project type during initialization. Users can add, modify, or remove constraints at any time.
+
+### Hard Constraint Format
+
+Each constraint MUST follow this format:
+
+```markdown
+HC-[NNN]: [Constraint Title]
+- **Type:** [Architecture / Security / Performance / Data Integrity / Platform-Specific / Other]
+- **Rule:** [Precise, unambiguous statement of what is forbidden or required]
+- **Violation Consequence:** [What happens if this rule is broken — e.g., "App rejected by App Store review", "Data corruption in production", "Security vulnerability (CVE-level)"]
+- **Applicable To:** [All projects / specific project types]
+```
+
+### Auto-Recommended Constraints by Project Type
+
+When initializing a new project, TRAE MUST recommend the following hard constraints based on detected project type:
+
+#### Apple App (SwiftUI) — Default Hard Constraints
+
+| ID | Constraint | Type | Consequence |
+|----|------------|------|-------------|
+| HC-001 | `@State` / `@Binding` variables MUST NOT be used to store data that persists across view navigation. Use `@Observable` (iOS 17+) or `@EnvironmentObject` for cross-view state. | Architecture | Stale UI state, data inconsistency |
+| HC-002 | All network requests MUST include retry logic with exponential backoff (max 3 retries, base delay 500ms). | Performance | App appears unresponsive on poor networks; user churn |
+| HC-003 | All user-facing error messages MUST be localized (minimum: en, zh-Hans). No hardcoded strings in production builds. | Platform-Specific | App Store rejection (Guideline 4.1) |
+| HC-004 | No direct file system access outside `Application Support` or `Documents` directory. | Data Integrity | App sandbox violation; crash on restart |
+| HC-005 | All UI animations MUST respect `Reduce Motion` accessibility setting (`Accessibility.isReduceMotionEnabled`). | Accessibility | App Store rejection (Guideline 4.3) |
+
+#### Web Frontend — Default Hard Constraints
+
+| ID | Constraint | Type | Consequence |
+|----|------------|------|-------------|
+| HC-006 | No direct DOM manipulation outside React/Vue lifecycle hooks. All DOM changes MUST go through framework reactivity system. | Architecture | Memory leaks, stale UI state, race conditions |
+| HC-007 | All API endpoints MUST have rate limiting and authentication checks. No public endpoint without auth middleware. | Security | Unauthorized data access, DDoS vulnerability |
+| HC-008 | All user inputs MUST be sanitized before rendering (XSS prevention). Use framework-provided sanitization, never `innerHTML`/`v-html` with user data. | Security | XSS vulnerability (OWASP Top 10) |
+| HC-009 | All critical paths MUST include loading states and error boundaries. No unhandled promise rejections. | Performance | Frozen UI, silent failures |
+
+#### Backend / API — Default Hard Constraints
+
+| ID | Constraint | Type | Consequence |
+|----|------------|------|-------------|
+| HC-010 | All API endpoints MUST have rate limiting and authentication checks. No public endpoint without auth middleware. | Security | Unauthorized access, data breach |
+| HC-011 | All database queries MUST use parameterized statements. No string interpolation in SQL. | Data Integrity | SQL injection (critical vulnerability) |
+| HC-012 | All error responses MUST include HTTP status code, error code (machine-readable), and human-readable message. No raw stack traces in production responses. | Architecture | Information leakage, broken client error handling |
+| HC-013 | All file uploads MUST be scanned for malware, size-limited (max 25MB), and stored outside web root. | Security | Server compromise, web root exposure |
+
+#### Game Project (Unity / Unreal) — Default Hard Constraints
+
+| ID | Constraint | Type | Consequence |
+|----|------------|------|-------------|
+| HC-014 | Simulation logic MUST NOT live in `MonoBehaviour` (Unity) or `AActor::Tick()` (Unreal). All simulation MUST be in dedicated service classes. | Architecture | Frame rate instability, save-game desync |
+| HC-015 | All networked state MUST be authoritative server-side. Client predictions MUST be reconcilable. | Architecture | Cheating vulnerability, inconsistent game state |
+| HC-016 | All asset loading MUST use async APIs. No synchronous `LoadAsset()` in gameplay code paths. | Performance | Frame drops, input lag, platform rejection |
+| HC-017 | Deterministic simulation MUST produce identical results across platforms for the same seed and input sequence. | Data Integrity | Multiplayer desync, replay system failure |
+
+#### Python / CLI Tool — Default Hard Constraints
+
+| ID | Constraint | Type | Consequence |
+|----|------------|------|-------------|
+| HC-018 | All external API calls MUST have timeout (max 30s) and retry logic. No blocking calls in async contexts. | Performance | Hung processes, resource exhaustion |
+| HC-019 | All configuration MUST be loaded from environment variables or config files. No hardcoded credentials. | Security | Credential exposure in version control |
+
+### User-Defined Hard Constraints
+
+Users can add custom hard constraints at any time:
+
+```markdown
+### User-Defined Hard Constraints (Example)
+
+| ID | Constraint | Type | Consequence |
+|----|------------|------|-------------|
+| HC-020 | [User-defined constraint text] | [Type] | [Consequence] |
+```
+
+**How to add a hard constraint:**
+1. User states: "添加硬约束 HC-XXX：[constraint description]"
+2. TRAE validates the constraint is: (a) specific and testable, (b) has a clear violation consequence
+3. TRAE appends to the hard constraints section with next available ID
+4. All future code generation MUST check against ALL hard constraints before delivery
+
+**How to modify/remove a hard constraint:**
+- User states: "修改/删除 HC-XXX"
+- TRAE requires user confirmation and records the reason in `CONTINUE/decision-log/`
+
+### Hard Constraint Verification Checklist
+
+Before delivering ANY code, TRAE MUST verify compliance with ALL applicable hard constraints:
+
+```markdown
+Hard Constraint Verification:
+- [ ] HC-001 through HC-[last] (all applicable constraints checked)
+- [ ] No violations detected, OR:
+  - Violation: HC-[NNN] — Reason: [justification for intentional violation, requires user approval]
+```
+
+**If any hard constraint is violated without explicit user approval → REJECT the output and regenerate.**
+
+---
+
 ## Core Files (Always Detailed — Never Skip)
 
 | File | Purpose | Maintained By |
@@ -698,6 +975,7 @@ Before delivering code, TRAE MUST mentally verify:
 | `PROJECT_CONTEXT.md` | Project goals, feature list, tech overview, memory decay strategy (§9), health dashboard (§10), maintenance tracking | Human + TRAE |
 | `MODEL_CONFIG.md` | Local model config (oMLX/Gemma/Qwen), model switching decision tree, dialogue management strategy | TRAE |
 | `REFERENCES.md` | Large file index and summaries (doc/PDF/Figma) | TRAE |
+| `[项目自有永久文件]` (如 `AI_CONTEXT_MAP.md`, `AI_PROGRESS_MAP.md`) | 任务路由/进度追踪等（项目自有核心文档） | 用户 + TRAE (自动检测推荐) |
 | `TEMPLATE_GUIDE.md` | Template usage guide with FAQ and quick reference | TRAE |
 | `STRUCTURE.md` | Directory structure overview and file relationship diagram | TRAE |
 
@@ -803,6 +1081,80 @@ Record important technical decisions for cross-session context recovery.
 
 ---
 
+## Verified Immutable Constraints (P2-1 — 已验证的知识固化, NEW in v1.9.2)
+
+**Problem:** After multiple conversations, certain design decisions and engineering conventions become "verified truths" (e.g., "Population-centric model", "Utility AI not behavior trees"), but they are scattered across various documents.
+
+**Mechanism:** After completing a module, TRAE MUST automatically extract verified design decisions and consolidate them into an immutable constraint list.
+
+### Extraction Rules (模块完成后自动提取)
+
+When a module summary is generated (CONTINUE/<module>-summary.md), TRAE MUST scan the following sources for verified constraints:
+
+| Source | What to Extract | Constraint Type |
+|--------|-----------------|-----------------|
+| `PRD/<module>.md` | Non-negotiable requirements (performance targets, compatibility rules) | **Functional Constraint** |
+| `CONTINUE/decision-log/` (last 30 days) | Architecture decisions that were validated through implementation | **Architectural Constraint** |
+| `DEVLOG/` (module period) | Engineering conventions proven during development | **Engineering Constraint** |
+| `ARCHIVE/` (if available) | Cross-module patterns that survived multiple iterations | **Pattern Constraint** |
+
+### Consolidation Process (固化流程)
+
+```
+Step 1: After generating module summary, scan decision logs from the same module period
+Step 2: Extract decisions that meet ALL of the following criteria:
+        - Implemented successfully (no rollback)
+        - Referenced by ≥2 other modules or files
+        - Validated through testing or user acceptance
+Step 3: Format each as a "Verified Immutable Constraint" (VIC):
+
+        VIC-[ID]: [Constraint Title]
+        - **Type:** Functional / Architectural / Engineering / Pattern
+        - **Source Module:** <module-name>
+        - **Validation Evidence:** [Test result / user acceptance / cross-module reference count]
+        - **Effective Date:** YYYY-MM-DD
+        - **Review Status:** Active (next review: YYYY-MM-DD, +90 days)
+        - **Override Procedure:** Requires user manual approval + documented reason
+
+Step 4: Append extracted VICs to `CONTINUE/verified-constraints.md` (create if not exists)
+Step 5: Add a reference to `verified-constraints.md` in AGENTS.md §3 (Permanent Layer)
+Step 6: Mark each VIC as "Active" — subsequent conversations MUST respect these constraints without re-validating
+```
+
+### Constraint Reference Table (constraints for all completed modules)
+
+| VIC ID | Type | Source Module | Status | Next Review |
+|--------|------|---------------|--------|-------------|
+| *(auto-generated on first module completion)* | Functional / Architectural / Engineering / Pattern | [module-name] | Active (next review: YYYY-MM-DD) | +90 days from effective date |
+
+### Quarterly Review Mechanism (约束复审机制)
+
+**Trigger:** Every 90 days during quarterly maintenance.
+
+**Process:**
+1. List all Active VICs from `CONTINUE/verified-constraints.md`
+2. For each VIC, assess:
+   - [ ] Still functionally valid (no breaking changes in requirements)
+   - [ ] No architectural drift has invalidated the constraint
+   - [ ] No new technology/liberation makes this constraint obsolete
+3. For VICs that fail review:
+   - Mark as "Deprecated" with reason
+   - Notify user — require manual re-approval to restore
+   - Log the deprecation reason in `ARCHIVE/quarterly-YYYY-QX.md`
+4. For VICs that pass: extend review date by another 90 days
+
+### User Override (用户手动推翻)
+
+Users can manually override any VIC:
+- **Command:** "推翻约束 VIC-[ID]，原因是 [reason]"
+- **Action:** TRAE marks the VIC as "Overridden" with the user's reason recorded
+- **Effect:** The constraint is no longer enforced; all subsequent conversations ignore it
+- **Audit Trail:** Override reason is recorded in `CONTINUE/verified-constraints.md` under the original VIC entry
+
+**Key Principle:** Verified Immutable Constraints eliminate redundant validation. Once a constraint is verified and consolidated, subsequent conversations MUST respect it without re-evaluating — unless the user explicitly overrides it.
+
+---
+
 ## Development Log Mechanism (DEVLOG/)
 
 Daily activity recording:
@@ -838,8 +1190,8 @@ Five-layer context architecture for managing document persistence:
 
 | Layer | Retention | Auto-load | Cleanup Strategy | Examples |
 |-------|-----------|-----------|------------------|----------|
-| **Permanent** | Project lifetime | Every session | Human decides removal | AGENTS.md, PROJECT_CONTEXT.md, MODEL_CONFIG.md |
-| **Stable** | Project lifetime | On-demand (via path) | Human decides archival | CONTINUE/*-summary.md, completed PRDs |
+| **Permanent** (动态预算) | Project lifetime | Every session (budget-limited) | Human decides removal; 初始化时按 T1-T5 档位动态调度: P0 文件始终加载, P1/P2 文件受预算限制, 超出部分降级为 Stable Layer | AGENTS.md (P0), MODEL_CONFIG.md (P0), [项目自有核心文档, 优先级排序] |
+| **Stable** (按需加载) | Project lifetime | On-demand (via path) — 包含从 Permanent 层降级的高优先级文件 | Human decides archival | CONTINUE/*-summary.md, completed PRDs, AI_PROGRESS_MAP.md (当预算不足时) |
 | **Working** | Current dev cycle | Current session | Demote to stable on module completion | Active PRD, recent DevLog |
 | **Temporary** | 30 days | Not auto-loaded | Mark as disposable on monthly cleanup | DevLogs 7-30 days old |
 | **Disposable** | Unlimited | Not loaded | Physical delete on quarterly cleanup | DevLogs >30 days old |
@@ -971,6 +1323,155 @@ Project Health Dashboard — [Project Name]
 
 ---
 
+### Game Project Health Metrics (P2-2 — 游戏领域适配, NEW in v1.9.2)
+
+When the detected project type is **Game Project** (Unity/C# or Unreal/C++), TRAE MUST extend the health dashboard with game-specific metrics.
+
+**Extended Dashboard Structure (Game Projects Only):**
+```
+Project Health Dashboard — [Project Name] (GAME)
+├── A. Maintenance Status (same as standard)
+├── B. Development Progress (same as standard)
+├── C. Risk Alerts
+│   ├── Overdue Modules: [list]
+│   ├── Memory Decay Warnings: [list]
+│   ├── Technical Risks: [list]
+│   └── ⚠️ Game-Specific Risks (NEW):
+│       ├── Asset Pipeline: [up-to-date / stale assets count]
+│       ├── Tick Drift: [stable / drifting — see metrics below]
+│       └── Deterministic Replay: [pass rate %]
+├── D. System Health (same as standard)
+└── E. Game-Specific Metrics (NEW):
+    ├── Compilation Status: [0 errors / X warnings]
+    ├── Asset Load Time: [avg ms per asset category]
+    ├── Tick Frame Rate Jitter: [±X% deviation from target]
+    └── Deterministic Replay Pass Rate: [X%]
+```
+
+**Game Health Score Standards (游戏健康度评分标准):**
+
+| Grade | Criteria | Action Required |
+|-------|----------|-----------------|
+| **Excellent** 🟢 | 0 compilation errors + Tick frame rate stable (jitter <5%) + replay pass rate >95% | No action needed |
+| **Good** 🟡 | ≤2 warnings + Tick frame rate jitter <10% + replay pass rate >85% | Monitor; schedule optimization in next sprint |
+| **Warning** 🟠 | >2 warnings OR Tick frame rate jitter >10% OR replay pass rate <85% | Investigate root cause; prioritize in current sprint |
+| **Danger** 🔴 | Compilation errors OR deterministic replay failures | Block all feature development until resolved |
+
+**Game-Specific Metric Definitions:**
+
+| Metric | Definition | Collection Method |
+|--------|-----------|-------------------|
+| **Compilation Status** | Number of compiler errors and warnings per build cycle | CI/CD pipeline output or `unity -batchmode -executeMethod BuildScript` |
+| **Asset Load Time** | Average time (ms) to load assets by category (models, textures, audio, animations) | Profiler instrumentation in test scenes |
+| **Tick Frame Rate Jitter** | Deviation of actual tick interval from target (e.g., ±5% on 60Hz = ±8.3ms) | Frame timing logs from simulation core module |
+| **Deterministic Replay Pass Rate** | Percentage of replay runs that produce identical state across N independent executions | Headless simulation test harness (≥100 runs) |
+
+**Game Risk Alert Rules:**
+- **Asset Pipeline Stale:** Any asset category with load time >2× baseline → alert in C. Risk Alerts
+- **Tick Drift Warning:** Tick frame rate jitter >10% for >3 consecutive builds → alert in C. Risk Alerts
+- **Tick Drift Danger:** Tick frame rate jitter >25% OR deterministic replay pass rate <70% → block all development (Danger grade)
+- **Asset Overdue:** Any PRD-defined asset not imported into project within 14 days of planned date → flag in C. Risk Alerts
+
+**Non-Game Projects:** When project type is NOT a game, the Game-Specific Metrics (Section E) and Game-Specific Risks subsection are automatically skipped. TRAE detects this during initialization and marks `$game_health` as `false` in the dashboard configuration.
+
+---
+
+## Project Scale Assessment (P2-3 — 项目规模自适应, NEW in v1.9.2)
+
+**Problem:** The current three modes (Full / Small / MVP) are discrete categories, but real project scale is continuous. This leads to mismatches where a "Medium" project (50-200 files) is forced into either Full or Small mode.
+
+**Solution:** Add a 5-level continuous scale assessment that dynamically adjusts document detail level, sub-directory count, and maintenance frequency.
+
+### Scale Assessment Algorithm (规模评估算法)
+
+During initialization (all modes), TRAE MUST run the following assessment:
+
+```
+Step 1: Count total files in project directory (excluding node_modules/, .git/, build artifacts)
+Step 2: Count source code files by language (.swift, .ts, .js, .py, .go, .rs, .cs, .cpp, etc.)
+Step 3: Count distinct module directories (PRD-defined features or natural code groupings)
+Step 4: Calculate composite score:
+        scale_score = (file_count × 0.3) + (source_file_count × 0.4) + (module_count × 15 × 0.3)
+Step 5: Map score to scale level using thresholds below
+```
+
+### Scale Level Thresholds (规模分级标准)
+
+| Scale Level | File Count | Source Files | Modules | Corresponding Mode | Document Detail Level | Sub-Dirs Created |
+|-------------|-----------|--------------|---------|-------------------|----------------------|------------------|
+| **Micro** | <10 files | <5 | 0-1 | MVP only (forced) | Minimal — core files only | Core + selected PRD placeholder |
+| **Small** | 10–50 files | 5–30 | 2-4 | Small mode (default) | Standard — core + selected modules | Core + PRD, CONTINUE/ |
+| **Medium** | 50–200 files | 30–100 | 4-8 | Full mode (reduced sections) | Detailed — core + most modules, skip DEPLOYMENT/ if not needed | Core + PRD, ARCHITECTURE/, CONTINUE/, DEVLOG/ |
+| **Large** | 200–500 files | 100-300 | 8-15 | Full mode (default) | Complete — all modules with full detail | All directories including DEPLOYMENT/, TESTING/ |
+| **Enterprise** | >500 files | >300 | 15+ | Full mode (extended) | Complete + additional sections (multi-tenant, compliance, SLA docs) | All directories + custom modules per user request |
+
+### Dynamic Document Generation Rules (动态文档生成规则)
+
+Based on the assessed scale level, TRAE MUST adjust document generation:
+
+| Scale Level | PRD Depth | ARCHITECTURE Depth | TESTING Coverage | DEPLOYMENT Detail | Maintenance Frequency |
+|-------------|-----------|-------------------|------------------|-------------------|----------------------|
+| Micro | 1 page max (core feature only) | Skip entirely | Manual test notes in DEVLOG/ | Skip | Weekly checks only |
+| Small | 2-3 pages per module (core features) | Tech stack summary only | Unit test targets documented | CI/CD basic config | Weekly monthly checks |
+| Medium | 5-10 pages per module (full specs) | Full architecture docs for active modules | Coverage ≥60% target | Standard CI/CD + staging env | Weekly monthly checks; quarterly at 180 days |
+| Large | Full PRD per module (comprehensive) | Complete architecture documentation | Coverage ≥80% target + E2E test plans | Full CI/CD + monitoring + rollback plans | Standard maintenance schedule |
+| Enterprise | Full PRD + compliance docs per module | Complete architecture + multi-tenant design | Coverage ≥90% target + formal QA process | Full CI/CD + SLA docs + compliance audit | Standard maintenance + quarterly compliance review |
+
+### Scale Migration Mechanism (规模迁移机制)
+
+Projects can grow or shrink over time. TRAE MUST support automatic scale migration:
+
+**Migration Triggers (迁移触发条件):**
+- **Upward migration (Small → Medium, Medium → Large, etc.):** Triggered when file count crosses the upper threshold for 2 consecutive monthly assessments
+- **Downward migration (Large → Medium, Medium → Small):** Triggered when file count drops below the lower threshold for 2 consecutive monthly assessments
+
+**Upward Migration Actions (向上迁移操作):**
+```
+When scale crosses from Level N to Level N+1:
+Step 1: Generate additional document sections that were previously skipped
+Step 2: Expand existing PRD modules with more detailed specifications
+Step 3: Add sub-directories that were previously omitted (e.g., add TESTING/ when entering Medium)
+Step 4: Update PROJECT_CONTEXT.md §1 (scope) with new scale level
+Step 5: Notify user: "项目规模已从 [Level N] 增长到 [Level N+1]，已自动扩展以下文档结构：[list]"
+```
+
+**Downward Migration Actions (向下精简操作):**
+```
+When scale crosses from Level N to Level N-1:
+Step 1: Mark previously created optional directories as "deprecated" (move to ARCHIVE/)
+Step 2: Reduce PRD depth for modules that are no longer active
+Step 3: Simplify maintenance schedule (reduce frequency if appropriate)
+Step 4: Update PROJECT_CONTEXT.md §1 (scope) with new scale level
+Step 5: Notify user: "项目规模已从 [Level N] 缩减到 [Level N-1]，已精简以下文档结构：[list]"
+```
+
+**Scale Migration Log (规模迁移记录):**
+
+Each scale migration is recorded in `PROJECT_CONTEXT.md §1` under a new subsection:
+```markdown
+### Scale Migration History (P2-3)
+
+| Date | From Level | To Level | Trigger | Actions Taken |
+|------|-----------|----------|---------|---------------|
+| YYYY-MM-DD | [Level N] | [Level N+1] or [N-1] | File count crossed threshold (X files) | [list of document changes] |
+```
+
+### Integration with Existing Modes (与现有模式的集成)
+
+The scale assessment does NOT replace the three modes. Instead, it refines them:
+
+| User Says | Scale Assessment Result | Final Mode Applied |
+|-----------|----------------------|-------------------|
+| "这是 MVP" | Any scale level | **MVP** — but document depth adjusted by scale (Micro=MVP minimal, Large=MVP with full specs) |
+| "这是小型项目" | Micro/Small scale | **Small** (standard behavior) |
+| "这是小型项目" | Medium/Large scale | **Small mode with Medium+ document depth** — user warned about mismatch |
+| "这是完整项目" | Micro scale | **Full mode with Micro document depth** — user warned about mismatch |
+| "这是完整项目" | Small/Medium/Large/Enterprise | **Full** (standard behavior) |
+
+> **Key Principle:** Scale assessment provides fine-grained control over document generation depth. The three modes (Full/Small/MVP) remain as user-facing triggers, but the actual document generation is adjusted by the assessed scale level. This ensures that even an MVP on a large codebase gets appropriate documentation depth, while a small project doesn't get overwhelmed by excessive documentation.
+
+---
+
 ## Conversation Strategy (AGENTS.md §13)
 
 ### Single Conversation Responsibility Types
@@ -984,6 +1485,10 @@ Project Health Dashboard — [Project Name]
 | **Review** | Code review, architecture review | Development + review simultaneously |
 | **Design** | UI/UX design, interaction prototypes | Design + backend simultaneously |
 | **Testing** | Write and execute test cases | Mixing new features with testing |
+| **SimCore Dev** (Game) | Implement simulation core logic (Tick, ECS, UtilityAI, state machines) | UI/rendering changes |
+| **Asset Gen** (Game) | Generate/import 3D models, textures, audio, animations | Gameplay logic changes |
+| **Shader Dev** (Game) | Write/modify Unity Shaders or Unreal Materials, post-processing effects | Non-rendering code |
+| **Level Design** (Game) | Scene layout, terrain, lighting, navmesh, spawn points | Core gameplay systems |
 
 ### Recommended Limits
 
@@ -1062,12 +1567,22 @@ Project Health Dashboard — [Project Name]
 
 ## File Read/Write Order
 
-### Reading Order (each new conversation)
-1. AGENTS.md (always)
-2. PROJECT_CONTEXT.md (first conversation only)
-3. MODEL_CONFIG.md (before each conversation)
-4. Current module's PRD (when developing that module)
-5. Related CONTINUE/ summaries (when continuing existing features)
+### Reading Order (each new conversation, subject to Context Budget)
+
+1. AGENTS.md — reads [Budget-Limited Permanent File List] from §3
+2. MODEL_CONFIG.md (before each conversation)
+3. [Project-owned context map] → AI_CONTEXT_MAP.md or equivalent (P0/P1, Permanent Layer if budget allows)
+4. [Budget-permitted progress tracker] → AI_PROGRESS_MAP.md (if T1/T2 budget insufficient, loaded from Stable Layer on-demand)
+5. Current working document (PRD, engineering spec, etc.)
+6. Related CONTINUE/ summaries (when continuing existing features)
+
+> **Note:** If total permanent layer exceeds Context Budget, lower-priority files
+> are demoted to Stable Layer (on-demand loading only). See AGENTS.md §3 for details.
+> 
+> **Budget-aware behavior by tier:**
+> - T1: Only P0 files loaded automatically (AGENTS.md + MODEL_CONFIG.md + PROJECT_CONTEXT_FILE)
+> - T2: P0 + first P1 file loaded automatically; remaining P1 files on-demand from Stable Layer
+> - T3+: All P0 + P1 files loaded automatically; P2 files on-demand
 
 ### Writing Order
 1. Update corresponding module's PRD (when requirements change)
@@ -1116,9 +1631,11 @@ Based on `scope` field in PROJECT_CONTEXT.md:
 
 | Field | Value |
 |-------|-------|
-| **Current version** | 1.8 |
+| **Current version** | 1.9.2 |
 | **Created** | 2026-06-27 |
-| **Last updated** | 2026-06-29 |
+| **Last updated** | 2026-07-02 |
+| **New in 1.9.2** | **P1 级优化**: (1) P1-1 游戏项目差异化内容 — §G1-G4 游戏专属章节模板 (Tick/Frame、确定性回放、头显模式、资产管道)、对话职责类型扩展 (SimCore Dev/Asset Gen/Shader Dev/Level Design)、游戏专属目录结构 (Assets/, BUILD/, GDD)、HC-014~HC-017 游戏硬约束; (2) P1-2 动态永久层调度 — T1-T5 档位→上下文预算上限映射表、6步调度算法 (检测/估算/填充/降级/标注/重算)、AGENTS.md §3 预算状态标注、Reading Order 支持动态加载顺序和预算感知 |
+| **New in 1.9** | **P0: Shell Mode + 功能等价检测 + 游戏项目增强**: 合并模式增加"外壳模式"(Shell Mode)，当检测到≥2个功能等价文档时自动跳过冗余创建；增加"功能等价检测"(P0-3)，智能识别 AI_CONTEXT_MAP.md / AI_PROGRESS_MAP.md / 技术文件框架/ 与标准文件的等价关系；项目类型检测表增强游戏开发（Unity/Unreal），新增 Tick vs Frame、确定性回放、资产管道等游戏专属章节模板 |
 | **New in 1.8** | **边界补全**：初始化后配置复用策略（Phase A/B — 后续任务不再重复弹出模型对话）；7 种边界情况降级处理（用户不理/随便填/只填一个/手工改配置等） |
 | **New in 1.7** | **Bug 修复**：Full / Small / MVP 模式补充交互式模型对话 — 从 0 开始的新项目也会先运行模型对话，再执行文件生成 |
 | **New in 1.6** | **架构重构：TRAE 先检测，用户再确认** — 交互式对话不再是"填空"而是"确认"：TRAE 先自动检测物理内存和模型服务状态（sysctl + curl），展示结果让用户确认/纠正，用户只需提供模型名（🧠/⚡）；检测环节提升为全局前置步骤，所有模式（Full/Small/MVP）统一先检测目录状态再决定行为；Full 模式在已有代码目录中自动降级为 Merge 模式以避免覆盖用户源码 |
