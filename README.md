@@ -2,7 +2,7 @@
 
 > AI Project Documentation Framework — Keep AI Agents (TRAE, Claude Code, Cursor, Codex, etc.) context-aware across sessions, no matter how long the project gets.
 
-[![Version](https://img.shields.io/badge/version-1.8-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Language](https://img.shields.io/badge/language-markdown-DB4936.svg)]()
@@ -60,6 +60,11 @@ TRAE 会自动初始化整个框架。
 
 ### 🤖 换 AI 工具不换规则
 一套框架适配 TRAE、Claude Code、Cursor、Codex、Gemini CLI 等任何 AI Coding Agent。
+
+### 🧩 v2.0 新增：智能文档合并
+- **功能等价物检测** — 自动识别项目自有文档（如 `AI_CONTEXT_MAP.md`、`技术文件框架/`）与标准文件的等效关系
+- **Shell Mode 外壳模式** — 保留项目自有文档结构，标准框架作为"外壳"包裹已有内容
+- **智能跳过** — 检测到等价文档时自动创建引用，避免冗余文件
 
 ## 目录结构
 
@@ -144,6 +149,11 @@ Auto-detects your physical RAM on startup. Adapts automatically from a 16GB lapt
 
 ### 🤖 Switch AI Tools, Keep the Rules
 One framework works with TRAE, Claude Code, Cursor, Codex, Gemini CLI — any AI Coding Agent.
+
+### 🧩 v2.0 New: Smart Document Merging
+- **Functional Equivalence Detection** — Auto-detects project-own docs (e.g., `AI_CONTEXT_MAP.md`, `技术文件框架/`) that serve the same purpose as standard files
+- **Shell Mode** — Preserves your project's existing documentation structure; the standard framework wraps around it as a "shell"
+- **Smart Skip** — When an equivalent document is found, creates a reference instead of duplicating content
 
 ---
 

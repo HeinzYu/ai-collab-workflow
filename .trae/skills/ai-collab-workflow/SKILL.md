@@ -8,7 +8,7 @@ description: Initialize any project (Apple App / Web / Backend / Game) with a st
 > A structured documentation framework for human + AI collaborative development using TRAE.
 > Supports Apple App, Web, Backend, Game, and any software project type.
 > Designed for both human developers and TRAE Agent.
-> **Version:** 1.9.2 | **Last Updated:** 2026-07-02
+> **Version:** 2.0 | **Last Updated:** 2026-07-03
 
 ---
 
@@ -55,6 +55,170 @@ Project/
 ├── CONTINUE/                    ○ Module summaries + decision logs
 ├── SUPPLEMENTARY/               ○ Deep-dive supplementary chapters
 └── ARCHIVE/                     ◉ Monthly/quarterly summaries (created on first maintenance)
+```
+
+---
+
+## Module Development Commands (P2 — §3 模块开发管理, NEW in v1.9.2)
+
+These are **user-triggered commands** for daily module development workflows. They operate on existing project documentation (PRD/, CONTINUE/) and do NOT create new projects.
+
+### 3.1 Generate Module PRD (生成模块详细 PRD)
+
+**Trigger Phrase:**
+- "生成 [模块名] 功能的详细 PRD"
+- "为 [模块名] 创建需求文档"
+
+**When to Use:** Add a new feature module's PRD document after project initialization, or when an existing module needs more detailed requirements.
+
+**TRAE Actions:**
+1. Check if `PRD/` directory exists; create it with placeholder structure if not
+2. Create `PRD/<module-name>.md` (or update existing file) with:
+   - Feature description (2-3 sentences)
+   - User stories / acceptance criteria
+   - Related file paths (if any existing code exists)
+3. Update `PROJECT_CONTEXT.md` module list with new entry (status: "not started")
+4. Return confirmation to user
+
+**Expected Output Format:**
+```markdown
+已生成模块 PRD: PRD/<module-name>.md
+
+内容概要:
+- 功能描述: [2-3 sentences]
+- 用户故事: [user story format]
+- 验收标准: [checklist items]
+
+模块状态已更新到 PROJECT_CONTEXT.md (状态: 未开始).
+如需开始开发此模块，请说 "开始今天的开发，当前模块是 [模块名]"。
+```
+
+**Fallback Behavior:** If `PROJECT_CONTEXT.md` does not exist, TRAE MUST inform the user:
+```markdown
+项目尚未初始化。请先运行 "这是一个完整的 [类型] 项目，包含 [功能]" 或 "帮我给这个项目加上协同工作流" 进行初始化，然后再添加模块 PRD。
+```
+
+---
+
+### 3.2 Generate Module Summary (生成模块总结)
+
+**Trigger Phrase:**
+- "生成 [模块名] 功能的总结"
+- "[模块名] 开发完成了，做个总结"
+
+**When to Use:** After completing a feature module, generate a summary document for cross-session context recovery.
+
+**TRAE Actions:**
+1. Check if `PRD/<module-name>.md` exists (requirements source)
+2. Read `DEVLOG/` logs during the module's development period
+3. Generate (or update) `CONTINUE/<module-name>-summary.md` containing:
+   - Feature overview (2-3 sentences)
+   - Key technical decisions
+   - Known issues and todos
+   - Related file path index
+4. Update module status in `PROJECT_CONTEXT.md` to "completed" with completion date
+
+**Expected Output Format:**
+```markdown
+已生成模块总结: CONTINUE/<module-name>-summary.md
+
+内容概要:
+- 功能概述: [2-3 sentences]
+- 关键技术决策: [list of decisions with rationale]
+- 已知问题: [list or "无"]
+- 相关文件索引: [file paths]
+
+模块状态已更新到 PROJECT_CONTEXT.md (状态: 已完成, 完成日期: YYYY-MM-DD).
+如需查看此模块的历史决策，可运行 "显示详细的合规检查报告" 或读取 CONTINUE/decision-log/.
+```
+
+**Fallback Behavior:** If `PRD/<module-name>.md` does not exist, TRAE MUST inform the user:
+```markdown
+未找到模块 "[module-name]" 的需求文档 (PRD/<module-name>.md)。请先运行 "生成 [模块名] 功能的详细 PRD" 创建需求文档，或确认模块名称是否正确。
+```
+
+---
+
+### 3.3 Continue Development with Summary (续接已有功能)
+
+**Trigger Phrase:**
+- "继续开发 [模块名]，参考之前的总结"
+- "[模块名] 上次做到一半，继续开发"
+
+**When to Use:** Resume interrupted development of a module, automatically loading relevant CONTINUE/ summaries and decision logs.
+
+**TRAE Actions:**
+1. Search for `CONTINUE/<module-name>-summary.md` (if exists, load it)
+2. Search for related decision logs in `CONTINUE/decision-log/` (sorted by date, last 5 entries)
+3. Read `PRD/<module-name>.md` for requirements (if exists)
+4. Present "current module state" to user, including:
+   - Last completed sub-task (from summary)
+   - Known issues / todos (from summary)
+   - Relevant decision logs (if any)
+5. Confirm with user before starting development
+
+**Expected Output Format:**
+```markdown
+正在续接模块: [module-name]
+
+已加载上下文:
+- 需求文档: PRD/<module-name>.md (如果存在)
+- 模块总结: CONTINUE/<module-name>-summary.md
+  - 上次完成子任务: [description]
+  - 已知问题: [list or "无"]
+- 决策日志 (最近 5 条):
+  - [YYYY-MM-DD] [title]: [brief description]
+
+当前模块状态: PROJECT_CONTEXT.md 中标记为 "[status]"。
+请确认是否从上次中断处继续开发？
+```
+
+**Fallback Behavior:** If no `CONTINUE/<module-name>-summary.md` or `PRD/<module-name>.md` exists, TRAE MUST inform the user:
+```markdown
+未找到模块 "[module-name]" 的任何历史文档（无 PRD、无 CONTINUE/ 总结）。这可能是首次开发此模块。如需创建需求文档，请运行 "生成 [模块名] 功能的详细 PRD"；如确认从零开始开发，可直接说 "开始今天的开发，当前模块是 [模块名]"。
+```
+
+---
+
+### 3.4 Start Daily Development (每日开发启动)
+
+**Trigger Phrase:**
+- "开始今天的开发，当前模块是 [模块名]"
+- "今天做 [模块名] 功能"
+
+**When to Use:** Start a new development session, specifying the current working module. TRAE loads permanent layer files + corresponding PRD and CONTINUE/ summary, then displays a project state summary.
+
+**TRAE Actions:**
+1. Load permanent layer files (AGENTS.md, MODEL_CONFIG.md, and dynamic project-own documents)
+2. Load corresponding module's PRD (`PRD/<module-name>.md`) if exists
+3. Load corresponding CONTINUE/ summary (if module was previously worked on)
+4. Display "current project state summary" including:
+   - Module status (from PROJECT_CONTEXT.md)
+   - Related modules and dependencies
+   - Any overdue items or risks for this module
+5. Confirm single responsibility: one conversation = one module
+
+**Expected Output Format:**
+```markdown
+今日开发已启动 — 模块: [module-name]
+
+已加载上下文:
+- 永久层文件: AGENTS.md, MODEL_CONFIG.md [± 项目自有文档]
+- 需求文档: PRD/<module-name>.md (如果存在)
+- 模块总结: CONTINUE/<module-name>-summary.md (如果存在)
+
+当前项目状态:
+- 模块总览: [X] 个模块, [Y] 已完成, [Z] 开发中
+- 当前模块状态: PROJECT_CONTEXT.md 中标记为 "[status]"
+- 相关依赖模块: [list or "无"]
+
+今日目标 (单职责): 完成 [module-name] 的 [specific sub-task, if user specifies].
+请确认开始开发，或补充具体子任务目标。
+```
+
+**Fallback Behavior:** If `PROJECT_CONTEXT.md` does not exist, TRAE MUST inform the user:
+```markdown
+项目尚未初始化。请先运行 "这是一个完整的 [类型] 项目，包含 [功能]" 或 "帮我给这个项目加上协同工作流" 进行初始化。
 ```
 
 ---
@@ -1250,6 +1414,97 @@ Disposable → (quarterly cleanup) → Physical delete or archive
 
 ---
 
+## Maintenance Trigger Commands (P2 — §5 项目维护管理, NEW in v1.9.2)
+
+These are **user-triggered commands** for periodic project maintenance. They invoke the same logic as Periodic Maintenance Checklists above but provide explicit user-facing entry points with formatted output.
+
+### 5.1 Weekly Maintenance (周维护)
+
+**Trigger Phrase:**
+- "执行本周项目维护"
+- "这周的维护检查一下"
+
+**When to Use:** Every 7 days, check DEVLOG/ records, update module progress, generate weekly summary.
+
+**TRAE Actions:**
+1. Check DEVLOG/ entries from the last 7 days (daily logs + any decision logs)
+2. Update `PROJECT_CONTEXT.md` module progress (completion percentages, status changes)
+3. Generate weekly summary: `DEVLOG/weekly-YYYY-WXX.md`
+
+**Expected Output Format:**
+```markdown
+本周项目维护完成:
+
+检查项:
+- 新增开发日志: [X] 条 (近7天)
+- 更新的模块: [module-name] ([old]% → [new]%)
+- 风险告警: [list or "无"]
+
+周报已生成: DEVLOG/weekly-YYYY-WXX.md
+```
+
+---
+
+### 5.2 Monthly Maintenance (月归档)
+
+**Trigger Phrase:**
+- "执行本月项目归档"
+- "这个月的归档做一下"
+
+**When to Use:** Every 30 days, review all logs and document changes, generate monthly summary.
+
+**TRAE Actions:**
+1. Check all log entries and document changes from the last 30 days
+2. Mark DevLogs >30 days as "disposable" (per Context Lifecycle policy)
+3. Generate monthly summary: `ARCHIVE/monthly-YYYY-MM.md`
+4. Update milestone timeline in `PROJECT_CONTEXT.md`
+
+**Expected Output Format:**
+```markdown
+本月项目归档完成:
+
+检查项:
+- 总开发日志: [X] 条 (近30天)
+- 完成的模块: [list or "无"]
+- 进行中的模块: [module-name] ([X]%)
+- 标记为可丢弃的日志: [X] 条
+
+月报已生成: ARCHIVE/monthly-YYYY-MM.md
+```
+
+---
+
+### 5.3 Quarterly Maintenance (季度审计)
+
+**Trigger Phrase:**
+- "执行季度项目审计"
+- "这个季度的全面检查做一下"
+
+**When to Use:** Every 90 days, comprehensive project health review including progress, risk alerts, and verified constraint extraction.
+
+**TRAE Actions:**
+1. Review all logs and document changes from the last 90 days
+2. Comprehensive project health assessment (progress + risk alerts + tech debt)
+3. Extract verified constraints from recent conversations and update `CONTINUE/verified-constraints.md` (if exists)
+4. Generate quarterly audit report: `SUPPLEMENTARY/quarterly-YYYY-QX.md`
+
+**Expected Output Format:**
+```markdown
+季度项目审计完成:
+
+检查项:
+- 总开发日志: [X] 条 (近90天)
+- 完成的模块: [Y]/[Z] ([list])
+- 合规评分趋势: ↑/↓/[stable] (from [old]% to [new]%)
+
+已验证约束提取:
+- [Constraint Title]: [Type] (经 [N] 次对话验证)
+
+审计报告已生成: SUPPLEMENTARY/quarterly-YYYY-QX.md
+```
+
+---
+
 ## Long-Term Project Memory Decay Strategy (PROJECT_CONTEXT.md §9)
 
 ### Three-Layer Memory Architecture
@@ -1373,6 +1628,111 @@ Project Health Dashboard — [Project Name] (GAME)
 - **Asset Overdue:** Any PRD-defined asset not imported into project within 14 days of planned date → flag in C. Risk Alerts
 
 **Non-Game Projects:** When project type is NOT a game, the Game-Specific Metrics (Section E) and Game-Specific Risks subsection are automatically skipped. TRAE detects this during initialization and marks `$game_health` as `false` in the dashboard configuration.
+
+---
+
+## Project Query Commands (P2 — §4 项目查询管理, NEW in v1.9.2)
+
+These are **user-triggered query commands** for project status and health monitoring. They read from existing documentation rather than creating new content.
+
+### 4.1 Query Development Progress (查询开发进度)
+
+**Trigger Phrase:**
+- "当前项目的开发进度如何？"
+- "项目现在进行到哪一步了？"
+
+**When to Use:** Check PROJECT_CONTEXT.md module status, completion percentages, and overall project health.
+
+**TRAE Actions:**
+1. Read `PROJECT_CONTEXT.md` module status section (typically §2 or §3)
+2. Display completion percentage for each feature module
+3. Show overall project health status
+
+**Expected Output Format:**
+```markdown
+当前项目开发进度：
+━━━━━━━━━━━━━━━━━━━━━━━
+总模块数: [X]
+
+模块状态:
+- 用户登录模块: ✅ 已完成 (100%) — 完成日期: YYYY-MM-DD
+- 首页展示模块: 🔄 开发中 (75%) — 预计完成: YYYY-MM-DD
+- 支付功能模块: ⏸️ 未开始 (0%) — 计划启动: YYYY-MM-DD
+- 用户设置模块: ⏸️ 未开始 (0%) — 计划启动: YYYY-MM-DD
+
+整体进度: [Y]%
+健康状态: 🟢 正常 / 🟡 关注 / 🔴 危险
+
+最近完成模块: [module-name] (YYYY-MM-DD)
+当前开发中模块: [module-name] ([Z]%)
+```
+
+**Fallback Behavior:** If `PROJECT_CONTEXT.md` does not exist or has no module status data, TRAE MUST inform the user:
+```markdown
+项目尚未初始化模块状态数据。请先运行 "这是一个完整的 [类型] 项目，包含 [功能]" 或 "帮我给这个项目加上协同工作流" 进行初始化。
+```
+
+---
+
+### 4.2 Display Project Health Dashboard (显示项目健康仪表板)
+
+**Trigger Phrase:**
+- "显示当前项目健康仪表板"
+- "查看项目整体健康状况"
+
+**When to Use:** View comprehensive project health including maintenance status, development progress, risk alerts, and system integrity.
+
+**TRAE Actions:**
+1. Read `PROJECT_CONTEXT.md` — extract all dashboard sections (A-D)
+2. If project type is Game, also read game-specific metrics (Section E) if available
+3. Generate formatted dashboard output
+
+**Expected Output Format (Standard Projects):**
+```markdown
+项目健康仪表板 — [Project Name]
+━━━━━━━━━━━━━━━━━━━━━━━
+
+A. 维护状态:
+   - 上次周维护: [YYYY-MM-DD] — ✅ 正常 / ⚠️ 逾期
+   - 上次月归档: [YYYY-MM-DD] — ✅ 正常 / ⚠️ 逾期
+   - 上次季度审计: [YYYY-MM-DD] — ✅ 正常 / ⚠️ 逾期
+
+B. 开发进度:
+   - 总模块数: [X]
+   - 已完成: [Y] ([Z]%)
+   - 开发中: [A]
+   - 未开始: [B] ([C]%)
+
+C. 风险告警:
+   - 逾期模块: [list or "无"]
+   - 记忆衰减警告: [list or "无"]
+   - 技术风险: [list or "无"]
+
+D. 系统健康:
+   - 核心文件完整性: AGENTS.md ✓ / PROJECT_CONTEXT.md ✓ / MODEL_CONFIG.md ✓
+   - 决策日志数量: [X] (近30天)
+   - Token 使用趋势: 📈 上升 / ➡️ 稳定 / 📉 下降 (近4周)
+
+整体健康评分: [Excellent/Good/Warning/Danger]
+```
+
+**Expected Output Format (Game Projects Only):**
+When `$game_health` is `true`, append Section E:
+```markdown
+
+E. 游戏特有指标 (Game-Specific Metrics):
+   - 编译状态: [0 errors / X warnings]
+   - 资产加载时间: [avg ms per category]
+   - Tick 帧率抖动: [±X% deviation]
+   - 确定性回放通过率: [X%]
+
+游戏健康评分: [Excellent/Good/Warning/Danger]
+```
+
+**Fallback Behavior:** If `PROJECT_CONTEXT.md` does not exist, TRAE MUST inform the user:
+```markdown
+项目尚未初始化，无法生成健康仪表板。请先运行 "这是一个完整的 [类型] 项目，包含 [功能]" 或 "帮我给这个项目加上协同工作流" 进行初始化。
+```
 
 ---
 
@@ -1536,13 +1896,289 @@ The scale assessment does NOT replace the three modes. Instead, it refines them:
 | Trigger Condition | Auto Action |
 |-------------------|-------------|
 | New conversation start | Load permanent layer + check maintenance dates + show project state summary |
-| Module completed | Auto-generate CONTINUE/ summary + update PROJECT_CONTEXT.md |
+| Module completed | Auto-generate CONTINUE/ summary + update PROJECT_CONTEXT.md + run compliance check (score before/after) |
 | Context usage >70% | Remind about unrecorded decisions + suggest new chat |
 | Context usage >80% | Trigger context overflow handling + suggest new chat |
 | User says "今天先这样"/"下次继续" | Execute work end checklist |
 | Continuous conversation >20 rounds | Remind about sufficient logging/summaries |
 | Last weekly maintenance >7 days | Remind on each new conversation start |
 | Last monthly maintenance >30 days | Remind on each new conversation start |
+
+### 8.1 Module Completion Auto-Check (完成重要模块后)
+
+**Trigger Condition:** System detects user has just completed a feature module.
+
+**Auto Actions (no user input required):**
+1. Auto-generate `CONTINUE/<module-name>-summary.md` (if not already generated)
+2. Update module status in `PROJECT_CONTEXT.md` to "completed" with completion date
+3. Run quick compliance check and log score to `.compliance_history` (if history doesn't exist, create baseline)
+4. Display compliance check result to user with suggestion:
+
+**Expected Output:**
+```markdown
+检测到"[module-name]"模块已完成:
+- 已自动生成 CONTINUE/<module-name>-summary.md
+- 模块状态已更新到 PROJECT_CONTEXT.md
+
+合规检查 (模块完成后自动运行):
+- 本次评分: [X]/100
+- 缺失文件: [list or "无"]
+
+建议: 运行 "显示详细的合规检查报告" 查看完整报告，或 "帮我补齐缺失的合规文件" 自动修复。
+```
+
+---
+
+## Session Management Commands (P2 — §6 会话管理, NEW in v1.9.2)
+
+These are **user-triggered commands** for daily session lifecycle management. They ensure state continuity across conversations.
+
+### 6.1 End Session (保存进度) — 会话结束
+
+**Trigger Phrase:**
+- "今天先这样，保存进度"
+- "执行工作结束清单"
+
+**When to Use:** End of daily development session — automatically update DEVLOG/, save progress, and confirm state.
+
+**TRAE Actions:**
+1. Update corresponding module's PRD (if requirements changed during session)
+2. Append DEVLOG/ entry (record this session's work)
+3. If module completed, generate CONTINUE/ summary
+4. Update `PROJECT_CONTEXT.md` module status (if changed)
+5. If important decisions were made, generate decision log entry
+6. Check context usage; if >80%, suggest new chat and save progress
+
+**Expected Output Format:**
+```markdown
+今日工作结束清单完成:
+
+检查项:
+- 本次会话新增日志: [X] 条
+- 更新的模块: [module-name] ([old]% → [new]%)
+- 重要决策: [description] (已记录到决策日志)
+
+会话工作总结:
+- 本次会话完成: [list of work done]
+
+下次会话可从"继续开发 [module-name]"开始。
+```
+
+---
+
+### 6.2 New Session (新对话) — 新会话启动
+
+**Trigger Phrase:**
+- "开始新的对话"
+
+**When to Use:** Start a brand new conversation, automatically loading permanent layer files based on Context Budget.
+
+**TRAE Actions:**
+1. Load permanent layer files (according to Context Budget):
+   - P0 tier (all users): AGENTS.md + MODEL_CONFIG.md + [project context files]
+   - T1 tier (≤16GB): P0 only (budget ≤8KB)
+   - T2 tier (17-32GB): P0 + first P1 file (budget ≤15KB)
+   - T3+ tier: can load more P1/P2 files (budget increases per tier)
+2. Check maintenance dates (weekly/monthly/quarterly)
+3. Show project state summary
+
+**Expected Output Format:**
+```markdown
+新会话已启动 — 永久层文件加载完成:
+
+已加载文件:
+- AGENTS.md (P0) ✓
+- MODEL_CONFIG.md (P0) ✓
+- [Project context files] (if budget allows)
+
+维护状态:
+- 上次周维护: [YYYY-MM-DD] — ✅正常 / ⚠️逾期
+- 上次月归档: [YYYY-MM-DD] — ✅正常 / ⚠️逾期
+
+项目状态摘要:
+- 总模块数: [X] | 已完成: [Y] ([Z]%)
+- 当前开发中模块: [module-name or "无"]
+
+请指定要开发的模块，或说 "显示当前项目健康仪表板" 查看完整状态。
+```
+
+---
+
+## Compliance Check Commands (P2 — §7 合规检查管理, NEW in v1.9.2)
+
+These are **user-triggered commands** for project documentation quality assessment. They perform a file-based compliance check WITHOUT requiring any external shell scripts — pure Markdown operations only.
+
+### 7.1 Quick Compliance Check (快速合规检查)
+
+**Trigger Phrase:**
+- "检查一下项目的合规情况"
+- "项目文档质量怎么样？"
+
+**When to Use:** Quick assessment of project documentation completeness — shows overall compliance score and critical missing files.
+
+**TRAE Actions:**
+1. Check existence of core files: AGENTS.md, PROJECT_CONTEXT.md, MODEL_CONFIG.md, REFERENCES.md
+2. Check existence of standard directories: PRD/, CONTINUE/, DEVLOG/
+3. Calculate compliance score (0-100):
+   - Core files present: 40 points (each worth ~10)
+   - Standard directories present: 30 points (PRD, CONTINUE, DEVLOG)
+   - Context lifecycle compliance: 15 points (permanent/working layers correct)
+   - Hardware adaptive check: 10 points (budget within expected range)
+   - Maintenance mechanism: 5 points (maintenance dates tracked)
+4. Generate summary output
+
+**Expected Output Format:**
+```markdown
+项目合规检查报告:
+━━━━━━━━━━━━━━━━━━━━━━━
+
+总评分: [X]/100
+
+核心文件检查:
+- AGENTS.md: ✅ 存在 / ❌ 缺失
+- PROJECT_CONTEXT.md: ✅ 存在 (内容完整) / ⚠️ 部分缺失
+- MODEL_CONFIG.md: ✅ 存在 (内容完整) / ❌ 缺失
+
+Context 生命周期检查:
+- Permanent 层: ✅ 正常 (X 个文件) / ⚠️ 需更新
+- Working 层: ✅ 正常 / ⚠️ X 个文件过期
+
+风险告警:
+- [X] [description] (if any missing optional files)
+
+建议: 运行 "帮我补齐缺失的合规文件" 自动修复，或手动创建缺失文件。
+```
+
+---
+
+### 7.2 Detailed Compliance Report (详细合规报告)
+
+**Trigger Phrase:**
+- "显示详细的合规检查报告"
+- "帮我看看项目文档缺哪些部分"
+
+**When to Use:** Multi-stage detailed report covering core files, context lifecycle, hardware adaptation, and maintenance mechanisms.
+
+**TRAE Actions:**
+1. Run all 4 stages of compliance check:
+   - **Stage 1:** Core file existence (AGENTS.md, PROJECT_CONTEXT.md, MODEL_CONFIG.md, REFERENCES.md)
+   - **Stage 2:** Context lifecycle (permanent/working/ephemeral layers — check file ages)
+   - **Stage 3:** Hardware adaptive (check if current Context Budget is within expected range for user tier)
+   - **Stage 4:** Maintenance mechanism (check if weekly/monthly/quarterly maintenance dates are tracked and up-to-date)
+2. Calculate total score across all stages
+3. Present detailed report
+
+**Expected Output Format:**
+```markdown
+详细合规检查报告:
+━━━━━━━━━━━━━━━━━━━━━━━
+
+【第一阶段】核心文件存在性
+- AGENTS.md: ✅ 存在 (内容完整) / ⚠️ 部分缺失 / ❌ 缺失
+- PROJECT_CONTEXT.md: ✅ 存在 (内容完整) / ⚠️ 部分缺失 / ❌ 缺失
+- MODEL_CONFIG.md: ✅ 存在 (内容完整) / ⚠️ 部分缺失 / ❌ 缺失
+- REFERENCES.md: ✅ 存在 (内容完整) / ⚠️ 部分缺失 / ❌ 缺失
+
+【第二阶段】Context 生命周期检查
+- Permanent 层: ✅ 正常 (X 个文件) / ⚠️ X 个文件过期
+- Working 层: ✅ 正常 (X 个文件) / ⚠️ X 个文件过期 (>7天)
+- Ephemeral 层: ✅ 正常 / ⚠️ X 个文件过期 (>30天)
+
+【第三阶段】硬件自适应检查
+- 当前档位: T[X] (X tokens)
+- Context Budget: ✅ 正常 (X KB/X KB) / ⚠️ 超出预算
+
+【第四阶段】维护机制检查
+- 周维护: ✅ 正常 (上次 YYYY-MM-DD) / ⚠️ 已过期 X 天
+- 月归档: ✅ 正常 (上次 YYYY-MM-DD) / ⚠️ 已过期 X 天
+- 季度审计: ✅ 正常 (上次 YYYY-MM-DD) / ⚠️ 已过期 X 天
+
+总评分: [X]/100
+```
+
+---
+
+### 7.3 Auto-Fix Compliance Gaps (自动修复合规缺口)
+
+**Trigger Phrase:**
+- "帮我补齐缺失的合规文件"
+- "自动修复项目文档缺口"
+
+**When to Use:** Automatically detect and generate missing core files, then re-check compliance score.
+
+**TRAE Actions:**
+1. Run quick compliance check to get current score and identify missing files
+2. For each missing core file, generate a minimal placeholder:
+   - `PROJECT_CONTEXT.md`: Create with default module list (empty) + dashboard template
+   - `PRD/` directory: Create empty placeholder with README.md
+   - `CONTINUE/` directory: Create empty placeholder
+   - `DEVLOG/` directory: Create with today's date subfolder
+3. Re-run compliance check and show before/after score comparison
+4. Present results to user for confirmation
+
+**Expected Output Format:**
+```markdown
+合规自动修复:
+━━━━━━━━━━━━━━━━━━━━━━━
+
+修复前评分: [X]/100
+- 缺失文件: PROJECT_CONTEXT.md, PRD/, DEPLOYMENT/
+
+正在生成缺失文件...
+- ✅ 已创建 PROJECT_CONTEXT.md (从现有代码自动填充)
+- ✅ 已创建 PRD/ 目录 (空占位符)
+- ✅ 已创建 DEPLOYMENT/ 目录 (空占位符)
+
+修复后评分: [Y]/100
+提升: +[Z] 分 (↑ [P]%)
+
+是否接受以上更改？(输入"是"确认 / "否"撤销)
+```
+
+**Fallback Behavior:** If user confirms, save all generated files. If user says "否" or similar, revert changes and inform:
+```markdown
+已撤销所有更改。项目状态恢复到修复前。如需手动创建缺失文件，请参考 "显示详细的合规检查报告" 获取详细列表。
+```
+
+---
+
+### 7.4 View Compliance History (查看合规历史趋势)
+
+**Trigger Phrase:**
+- "看看合规评分的历史变化"
+- "显示项目文档的改进趋势"
+
+**When to Use:** Read `.compliance_history` file and display score trend over time.
+
+**TRAE Actions:**
+1. Check if `.compliance_history` file exists (created by previous compliance checks)
+2. If not, inform user that no history is available yet (first check will create it)
+3. If exists, parse entries and display trend table
+
+**Expected Output Format (with history):**
+```markdown
+合规评分历史趋势:
+━━━━━━━━━━━━━━━━━━━━━━━
+
+日期       | 评分  | 趋势
+-----------|-------|------
+YYYY-MM-DD | [X]   | (首次)
+YYYY-MM-DD | [Y]   | ↑/+N 或 ↓/-N
+
+总趋势: ↑/↓/[stable] (from [start]% to [end]%, +[total] points)
+平均提升: +[avg] 分/周
+
+建议: [actionable recommendation based on trend]
+```
+
+**Expected Output Format (no history):**
+```markdown
+暂无合规历史数据。
+
+首次合规检查将创建 `.compliance_history` 文件，记录当前评分作为基准线。
+
+如需首次检查，请运行 "检查一下项目的合规情况"。
+```
 
 ---
 
