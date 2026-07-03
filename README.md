@@ -43,6 +43,21 @@ cp -r ai-collab-workflow/.trae/skills/ai-collab-workflow ~/.trae/skills/
 
 TRAE 会自动初始化整个框架。
 
+### 📢 所有场景触发语（完整列表见 [启动语使用指南](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md)）
+
+| 场景分类 | 触发语示例（自然语言，无需记忆） | 完整说明 |
+|---------|-------------------------------|----------|
+| 🚀 **项目初始化** (4条) | "这是一个完整的 [类型] 项目，包含 [功能]" / "这是一个简单的工具 App" / "这是一个原型验证" | [§1 详细说明](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#1-项目初始化类启动语) |
+| 🔗 **已有项目集成** (3条) | "帮我给这个项目加上协同工作流" | [§2 详细说明](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#2-已有项目集成类启动语) |
+| 🛠️ **模块开发管理** (4条) | "生成 [模块名] 功能的详细 PRD" / "今天做 [模块名] 功能" | [§3 详细说明](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#3-模块开发管理类启动语) |
+| 📊 **项目查询与管理** (2条) | "当前项目的开发进度如何？" / "显示当前项目健康仪表板" | [§4 详细说明](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#4-项目查询与管理类启动语) |
+| 🧹 **项目维护管理** (3条) | "执行本周/本月/季度项目维护" | [§5 详细说明](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#5-项目维护管理类启动语) |
+| 💬 **会话管理** (2条) | "今天先这样，保存进度" / "开始新的对话" | [§6 详细说明](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#6-会话管理类启动语) |
+| ✅ **合规检查管理** (4条) | "检查一下项目的合规情况" / "帮我补齐缺失的合规文件" | [§7 详细说明](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#7-合规检查管理类启动语) |
+| ⚙️ **自动触发场景** (6种) | 系统自动执行，无需用户输入 | [§8 详细说明](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#8-自动触发场景无需用户输入) |
+
+> **💡 核心原则**: 像日常对话一样表达你的需求即可，无需记忆任何特殊语法或命令行参数。完整启动语列表和使用指南请参阅 [TRIGGER_COMMANDS.md](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md)。
+
 ## 你能得到什么
 
 ### 🧠 AI 有了"项目记忆"
@@ -129,6 +144,21 @@ In your project, tell TRAE:
 > "This is a full-stack web app with login, dashboard, and settings features"
 
 TRAE initializes the entire framework automatically.
+
+### 📢 All Trigger Phrases (full list in [Trigger Commands Guide](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md))
+
+| Scenario Category | Trigger Phrase Examples (natural language, no memorization) | Full Documentation |
+|-------------------|-----------------------------------------------------------|-------------------|
+| 🚀 **Project Initialization** (4) | "This is a complete [type] project with [features]" / "This is a simple tool App" / "This is an MVP prototype" | [§1 Details](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#1-项目初始化类启动语) |
+| 🔗 **Existing Project Integration** (3) | "Help me add the collaborative workflow to this project" | [§2 Details](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#2-已有项目集成类启动语) |
+| 🛠️ **Module Development** (4) | "Generate detailed PRD for [module name]" / "Today's development: [module name]" | [§3 Details](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#3-模块开发管理类启动语) |
+| 📊 **Project Query & Management** (2) | "What's the current development progress?" / "Show project health dashboard" | [§4 Details](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#4-项目查询与管理类启动语) |
+| 🧹 **Project Maintenance** (3) | "Execute weekly/monthly/quarterly project maintenance" | [§5 Details](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#5-项目维护管理类启动语) |
+| 💬 **Session Management** (2) | "That's it for today, save progress" / "Start a new session" | [§6 Details](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#6-会话管理类启动语) |
+| ✅ **Compliance Check** (4) | "Check the project's compliance status" / "Help me fill missing compliance files" | [§7 Details](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#7-合规检查管理类启动语) |
+| ⚙️ **Auto-triggered Scenarios** (6) | System executes automatically, no user input needed | [§8 Details](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md#8-自动触发场景无需用户输入) |
+
+> **💡 Core Principle**: Just express your needs in natural conversation — no special syntax or command-line parameters to memorize. For the complete trigger phrase list and usage guide, see [TRIGGER_COMMANDS.md](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md).
 
 ---
 
