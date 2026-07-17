@@ -27,21 +27,22 @@
 
 ## 快速开始
 
-### 3 分钟安装
+### 一键安装 (推荐)
 
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/HeinzYu/ai-collab-workflow.git
+curl -sSL https://raw.githubusercontent.com/HeinzYu/ai-collab-workflow/main/install.sh | bash
 
-# 2. 安装为 TRAE Skill（推荐）
-cp -r ai-collab-workflow/.trae/skills/ai-collab-workflow ~/.trae/skills/
+# 或手动安装:
+git clone https://github.com/HeinzYu/ai-collab-workflow.git
+cd ai-collab-workflow
+bash install.sh
 ```
 
-在你的项目中对 TRAE 说：
+在你的项目中对 AI Agent 说：
 
-> "这是一个完整的 Apple App 项目，包含登录、首页、设置等功能"
+> "这是一个完整的 [类型] 项目，包含 [功能]"
 
-TRAE 会自动初始化整个框架。
+AI Agent 会自动初始化整个框架。
 
 ### 📢 所有场景触发语（完整列表见 [启动语使用指南](.trae/skills/ai-collab-workflow/TRIGGER_COMMANDS.md)）
 
